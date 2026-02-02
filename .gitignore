@@ -1,0 +1,23 @@
+# Environment and secrets
+.env
+*.env.local
+
+# Data directory (contains wallets and sensitive data)
+data/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Logs
+*.log
+logs/
+
+# Node modules (shouldn't be here but just in case)
+node_modules/
