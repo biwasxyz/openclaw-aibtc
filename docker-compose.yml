@@ -1,0 +1,31 @@
+services:
+  openclaw-gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: openclaw-aibtc
+    environment:
+      HOME: /home/node
+      TERM: xterm-256color
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
+      OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_GATEWAY_TOKEN}
+      NETWORK: ${NETWORK:-mainnet}
+    volumes:
+      - ./data:/home/node/.openclaw
+      - ./data/workspace:/home/node/.openclaw/workspace
+      - ./data/config:/home/node/.openclaw/config
+    ports:
+      - "${OPENCLAW_GATEWAY_PORT:-18789}:18789"
+      - "${OPENCLAW_BRIDGE_PORT:-18790}:18790"
+    init: true
+    restart: unless-stopped
+    command:
+      [
+        "node",
+        "dist/index.js",
+        "gateway",
+        "--bind",
+        "0.0.0.0",
+        "--port",
+        "18789",
+      ]
