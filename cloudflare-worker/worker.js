@@ -209,11 +209,13 @@ const HTML = `<!DOCTYPE html>
           <li>Telegram Bot Token → Message <a href="https://t.me/BotFather" target="_blank" style="color: #f7931a;">@BotFather</a></li>
         </ul>
         <p style="margin-bottom: 0.5rem;"><strong>For VPS deploy:</strong></p>
-        <ul style="margin-left: 1.5rem;">
-          <li>Create a VPS (2GB RAM, 25GB disk) on <a href="https://digitalocean.com" target="_blank" style="color: #f7931a;">DigitalOcean</a>, <a href="https://hetzner.com" target="_blank" style="color: #f7931a;">Hetzner</a>, or <a href="https://vultr.com" target="_blank" style="color: #f7931a;">Vultr</a></li>
-          <li>Choose Ubuntu 24.04 with SSH key authentication</li>
+        <ol style="margin-left: 1.5rem;">
+          <li style="margin-bottom: 0.5rem;">Generate SSH key (run locally):<br><code style="background: #0d0d0d; padding: 2px 6px; border-radius: 4px;">ssh-keygen -t ed25519</code></li>
+          <li style="margin-bottom: 0.5rem;">Copy your public key:<br><code style="background: #0d0d0d; padding: 2px 6px; border-radius: 4px;">cat ~/.ssh/id_ed25519.pub</code></li>
+          <li style="margin-bottom: 0.5rem;">Create VPS (2GB RAM, 25GB disk) on <a href="https://digitalocean.com" target="_blank" style="color: #f7931a;">DigitalOcean</a>, <a href="https://hetzner.com" target="_blank" style="color: #f7931a;">Hetzner</a>, or <a href="https://vultr.com" target="_blank" style="color: #f7931a;">Vultr</a></li>
+          <li style="margin-bottom: 0.5rem;">Choose Ubuntu 24.04, paste your public key when asked</li>
           <li>SSH in: <code style="background: #0d0d0d; padding: 2px 6px; border-radius: 4px;">ssh root@your-vps-ip</code></li>
-        </ul>
+        </ol>
       </div>
     </div>
 
