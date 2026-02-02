@@ -160,6 +160,9 @@ if [ -d "$INSTALL_DIR/data/openclaw.json" ]; then
     $SUDO rm -rf "$INSTALL_DIR/data/openclaw.json"
 fi
 
+# Fix permissions for Docker container (runs as node user, UID 1000)
+$SUDO chown -R 1000:1000 "$INSTALL_DIR/data"
+
 cd "$INSTALL_DIR"
 
 # Create .env
