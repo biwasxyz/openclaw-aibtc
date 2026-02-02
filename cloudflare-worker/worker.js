@@ -95,29 +95,29 @@ const HTML = `<!DOCTYPE html>
       width: 100%;
       max-width: 720px;
       margin: 0 auto;
-      padding: 2rem 1rem;
+      padding: 1rem;
     }
 
     /* Header */
     .header {
       text-align: center;
-      margin-bottom: 2.5rem;
+      margin-bottom: 1rem;
       animation: fadeInDown 0.6s ease-out;
     }
 
     .logo {
-      font-size: clamp(3rem, 10vw, 4.5rem);
-      margin-bottom: 0.75rem;
+      font-size: clamp(2rem, 8vw, 3rem);
+      margin-bottom: 0.25rem;
       display: inline-block;
       animation: float 3s ease-in-out infinite;
-      filter: drop-shadow(0 0 30px var(--btc-orange-glow));
+      filter: drop-shadow(0 0 20px var(--btc-orange-glow));
     }
 
     h1 {
       font-family: 'Outfit', sans-serif;
-      font-size: clamp(1.75rem, 6vw, 2.75rem);
+      font-size: clamp(1.5rem, 5vw, 2rem);
       font-weight: 700;
-      margin-bottom: 0.5rem;
+      margin-bottom: 0.25rem;
       background: linear-gradient(135deg, var(--btc-orange) 0%, #ffa726 50%, var(--btc-orange) 100%);
       background-size: 200% auto;
       -webkit-background-clip: text;
@@ -128,7 +128,7 @@ const HTML = `<!DOCTYPE html>
 
     .subtitle {
       color: var(--text-secondary);
-      font-size: clamp(0.95rem, 3vw, 1.1rem);
+      font-size: clamp(0.8rem, 2.5vw, 0.95rem);
       font-weight: 400;
     }
 
@@ -136,9 +136,9 @@ const HTML = `<!DOCTYPE html>
     .card {
       background: var(--bg-card);
       border: 1px solid var(--border-subtle);
-      border-radius: var(--radius-lg);
-      padding: 1.25rem;
-      margin-bottom: 1rem;
+      border-radius: var(--radius-md);
+      padding: 0.875rem;
+      margin-bottom: 0.625rem;
       backdrop-filter: blur(10px);
       transition: all 0.3s ease;
       animation: fadeInUp 0.5s ease-out backwards;
@@ -168,43 +168,43 @@ const HTML = `<!DOCTYPE html>
     .card__header {
       display: flex;
       align-items: center;
-      gap: 0.5rem;
-      margin-bottom: 1rem;
+      gap: 0.4rem;
+      margin-bottom: 0.5rem;
     }
 
     .card__icon {
-      font-size: 1.25rem;
+      font-size: 1rem;
     }
 
     .card__title {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.75rem;
+      font-size: 0.7rem;
       font-weight: 600;
       color: var(--text-secondary);
       text-transform: uppercase;
-      letter-spacing: 0.1em;
+      letter-spacing: 0.08em;
     }
 
     /* Command box - terminal style */
     .terminal {
       background: var(--bg-secondary);
       border: 1px solid var(--border-subtle);
-      border-radius: var(--radius-md);
+      border-radius: var(--radius-sm);
       overflow: hidden;
     }
 
     .terminal__bar {
       display: flex;
       align-items: center;
-      gap: 6px;
-      padding: 0.6rem 0.75rem;
+      gap: 5px;
+      padding: 0.4rem 0.6rem;
       background: rgba(255, 255, 255, 0.02);
       border-bottom: 1px solid var(--border-subtle);
     }
 
     .terminal__dot {
-      width: 10px;
-      height: 10px;
+      width: 8px;
+      height: 8px;
       border-radius: 50%;
       background: var(--text-muted);
     }
@@ -216,8 +216,8 @@ const HTML = `<!DOCTYPE html>
     .terminal__body {
       display: flex;
       align-items: center;
-      padding: 1rem;
-      gap: 0.75rem;
+      padding: 0.6rem 0.75rem;
+      gap: 0.5rem;
       overflow-x: auto;
       -webkit-overflow-scrolling: touch;
     }
@@ -226,13 +226,13 @@ const HTML = `<!DOCTYPE html>
       color: var(--btc-orange);
       font-family: 'JetBrains Mono', monospace;
       font-weight: 600;
-      font-size: 0.9rem;
+      font-size: 0.85rem;
       flex-shrink: 0;
     }
 
     .terminal__command {
       font-family: 'JetBrains Mono', monospace;
-      font-size: clamp(0.8rem, 2.5vw, 0.9rem);
+      font-size: clamp(0.75rem, 2.5vw, 0.85rem);
       color: var(--terminal-green);
       white-space: nowrap;
       flex: 1;
@@ -243,16 +243,16 @@ const HTML = `<!DOCTYPE html>
       background: var(--btc-orange);
       color: #000;
       border: none;
-      padding: 0.6rem 1rem;
+      padding: 0.4rem 0.75rem;
       border-radius: var(--radius-sm);
       cursor: pointer;
       font-family: 'Outfit', sans-serif;
       font-weight: 600;
-      font-size: 0.85rem;
+      font-size: 0.8rem;
       transition: all 0.2s ease;
       flex-shrink: 0;
-      min-height: 44px;
-      min-width: 70px;
+      min-height: 36px;
+      min-width: 60px;
     }
 
     .copy-btn:hover {
@@ -269,21 +269,21 @@ const HTML = `<!DOCTYPE html>
     }
 
     .card__note {
-      font-size: 0.8rem;
+      font-size: 0.7rem;
       color: var(--text-muted);
       text-align: center;
-      margin-top: 0.75rem;
-      line-height: 1.5;
+      margin-top: 0.4rem;
+      line-height: 1.4;
     }
 
     /* Prerequisites card */
     .prereq {
-      font-size: 0.9rem;
+      font-size: 0.8rem;
       color: var(--text-secondary);
     }
 
     .prereq__section {
-      margin-bottom: 1rem;
+      margin-bottom: 0.5rem;
     }
 
     .prereq__section:last-child {
@@ -293,18 +293,18 @@ const HTML = `<!DOCTYPE html>
     .prereq__heading {
       font-weight: 600;
       color: var(--text-primary);
-      margin-bottom: 0.5rem;
-      font-size: 0.85rem;
+      margin-bottom: 0.25rem;
+      font-size: 0.75rem;
     }
 
     .prereq__list {
-      margin-left: 1.25rem;
+      margin-left: 1rem;
       margin-bottom: 0;
     }
 
     .prereq__list li {
-      margin-bottom: 0.4rem;
-      line-height: 1.5;
+      margin-bottom: 0.2rem;
+      line-height: 1.4;
     }
 
     .prereq__list a {
@@ -320,58 +320,58 @@ const HTML = `<!DOCTYPE html>
     .prereq__code {
       display: inline-block;
       background: var(--bg-secondary);
-      padding: 2px 8px;
+      padding: 1px 6px;
       border-radius: var(--radius-sm);
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.8rem;
-      margin-top: 4px;
+      font-size: 0.7rem;
+      margin-top: 2px;
     }
 
     /* Features grid */
     .features {
       display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 0.75rem;
-      margin-bottom: 2rem;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.5rem;
+      margin-bottom: 0.75rem;
       animation: fadeInUp 0.5s ease-out 0.3s backwards;
     }
 
     .feature {
       background: var(--bg-card);
       border: 1px solid var(--border-subtle);
-      border-radius: var(--radius-md);
-      padding: 1rem;
+      border-radius: var(--radius-sm);
+      padding: 0.5rem;
       text-align: center;
       transition: all 0.3s ease;
     }
 
     .feature:hover {
       background: var(--bg-card-hover);
-      transform: translateY(-2px);
+      transform: translateY(-1px);
     }
 
     .feature__icon {
-      font-size: 1.5rem;
-      margin-bottom: 0.4rem;
+      font-size: 1.1rem;
+      margin-bottom: 0.2rem;
     }
 
     .feature__title {
       font-weight: 600;
-      font-size: 0.9rem;
-      margin-bottom: 0.2rem;
+      font-size: 0.7rem;
+      margin-bottom: 0.1rem;
     }
 
     .feature__desc {
-      font-size: 0.75rem;
+      font-size: 0.6rem;
       color: var(--text-secondary);
-      line-height: 1.4;
+      line-height: 1.3;
     }
 
     /* Footer links */
     .links {
       display: flex;
       justify-content: center;
-      gap: 1rem;
+      gap: 0.5rem;
       flex-wrap: wrap;
       animation: fadeInUp 0.5s ease-out 0.35s backwards;
     }
@@ -379,14 +379,14 @@ const HTML = `<!DOCTYPE html>
     .links a {
       display: flex;
       align-items: center;
-      gap: 0.4rem;
+      gap: 0.3rem;
       color: var(--text-secondary);
       text-decoration: none;
-      font-size: 0.9rem;
-      padding: 0.5rem 0.75rem;
+      font-size: 0.75rem;
+      padding: 0.35rem 0.5rem;
       border-radius: var(--radius-sm);
       transition: all 0.2s ease;
-      min-height: 44px;
+      min-height: 32px;
     }
 
     .links a:hover {
@@ -395,8 +395,8 @@ const HTML = `<!DOCTYPE html>
     }
 
     .links svg {
-      width: 18px;
-      height: 18px;
+      width: 14px;
+      height: 14px;
       flex-shrink: 0;
     }
 
@@ -435,49 +435,48 @@ const HTML = `<!DOCTYPE html>
     /* Tablet and up */
     @media (min-width: 640px) {
       .container {
-        padding: 3rem 1.5rem;
+        padding: 1.5rem;
       }
 
       .header {
-        margin-bottom: 3rem;
-      }
-
-      .card {
-        padding: 1.5rem;
         margin-bottom: 1.25rem;
       }
 
-      .features {
-        grid-template-columns: repeat(4, 1fr);
-        gap: 1rem;
+      .card {
+        padding: 1rem;
+        margin-bottom: 0.75rem;
       }
 
       .links {
-        gap: 1.5rem;
+        gap: 0.75rem;
       }
     }
 
     /* Desktop */
     @media (min-width: 1024px) {
       .container {
-        padding: 4rem 2rem;
+        padding: 2rem;
       }
 
       .card:hover {
-        transform: translateY(-3px);
+        transform: translateY(-2px);
       }
 
       .feature:hover {
-        transform: translateY(-4px);
+        transform: translateY(-2px);
       }
     }
 
     /* Mobile-specific adjustments */
     @media (max-width: 480px) {
+      .features {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
       .terminal__body {
         flex-direction: column;
         align-items: stretch;
-        gap: 0.75rem;
+        gap: 0.5rem;
       }
 
       .terminal__prompt {
@@ -486,14 +485,15 @@ const HTML = `<!DOCTYPE html>
 
       .copy-btn {
         width: 100%;
+        min-height: 40px;
       }
 
       .card__note {
-        font-size: 0.75rem;
+        font-size: 0.65rem;
       }
 
       .prereq__code {
-        font-size: 0.7rem;
+        font-size: 0.65rem;
         word-break: break-all;
         white-space: normal;
       }
