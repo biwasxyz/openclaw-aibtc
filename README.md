@@ -185,12 +185,30 @@ The bot will ask for a password - this encrypts your wallet locally.
 
 ## Updating
 
+### Full Update (rebuild container)
+
 ```bash
 cd openclaw-aibtc
 git pull
 docker compose down
 docker compose build --no-cache
 docker compose up -d
+```
+
+### Quick Skill Update (existing installs)
+
+If you installed before and want the latest skill improvements (daemon mode for wallet persistence):
+
+```bash
+curl -sSL https://sh.biwas.xyz/update-skill.sh | sh
+```
+
+Or manually:
+```bash
+cd /opt/openclaw-aibtc  # or ~/openclaw-aibtc
+curl -sSL https://sh.biwas.xyz/skills/aibtc/SKILL.md -o data/workspace/skills/aibtc/SKILL.md
+chown 1000:1000 data/workspace/skills/aibtc/SKILL.md
+docker compose restart
 ```
 
 ## Troubleshooting
