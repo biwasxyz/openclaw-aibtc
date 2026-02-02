@@ -11,9 +11,9 @@ NC='\033[0m'
 echo -e "${BLUE}"
 echo "╔═══════════════════════════════════════════════════════════╗"
 echo "║                                                           ║"
-echo "║   ₿  OpenClaw + aibtc Local Setup                         ║"
+echo "║   ₿  OpenClaw + aibtc                                     ║"
 echo "║                                                           ║"
-echo "║   Bitcoin & Stacks blockchain agent (Docker Desktop)      ║"
+echo "║   Bitcoin & Stacks AI Agent (Docker Desktop)              ║"
 echo "║                                                           ║"
 echo "╚═══════════════════════════════════════════════════════════╝"
 echo -e "${NC}"
@@ -31,59 +31,429 @@ if ! docker info &> /dev/null; then
     exit 1
 fi
 
-echo -e "${GREEN}✓ Docker is installed and running${NC}"
+echo -e "${GREEN}✓ Docker is running${NC}"
 
-# Check for docker compose
 if ! docker compose version &> /dev/null; then
     echo -e "${RED}Error: Docker Compose is not available.${NC}"
-    echo "Please update Docker Desktop or install Docker Compose."
     exit 1
 fi
 
-echo -e "${GREEN}✓ Docker Compose is available${NC}"
-
-# Check for git
-if ! command -v git &> /dev/null; then
-    echo -e "${RED}Error: git is not installed.${NC}"
-    echo "Please install git: https://git-scm.com/downloads"
-    exit 1
-fi
-
-echo -e "${GREEN}✓ Git is available${NC}"
+echo -e "${GREEN}✓ Docker Compose available${NC}"
 echo ""
 
 # Install directory
 INSTALL_DIR="$HOME/openclaw-aibtc"
 
-# Clone or update repo
-if [ -d "$INSTALL_DIR" ]; then
+# Check existing installation
+if [ -f "$INSTALL_DIR/.env" ]; then
     echo -e "${YELLOW}Found existing installation at $INSTALL_DIR${NC}"
-    read -p "Update existing installation? (y/N): " UPDATE
-    if [[ "$UPDATE" =~ ^[Yy]$ ]]; then
+    read -p "Reconfigure? (y/N): " RECONFIG
+    if [[ ! "$RECONFIG" =~ ^[Yy]$ ]]; then
+        echo -e "${BLUE}Starting existing installation...${NC}"
         cd "$INSTALL_DIR"
-        git pull
+        docker compose up -d
+        echo -e "${GREEN}✓ Agent started!${NC}"
+        echo "Message your Telegram bot to chat."
+        exit 0
     fi
-else
-    echo -e "${BLUE}Cloning repository...${NC}"
-    git clone https://github.com/biwasxyz/openclaw-aibtc.git "$INSTALL_DIR"
 fi
 
+# Get configuration
+echo -e "${YELLOW}Step 1: OpenRouter API Key${NC}"
+echo "Get your key at: https://openrouter.ai/keys"
+read -p "Enter OpenRouter API Key: " OPENROUTER_KEY
+if [ -z "$OPENROUTER_KEY" ]; then
+    echo -e "${RED}Error: OpenRouter API key is required.${NC}"
+    exit 1
+fi
+
+echo ""
+echo -e "${YELLOW}Step 2: Telegram Bot Token${NC}"
+echo "Create a bot via @BotFather on Telegram"
+read -p "Enter Telegram Bot Token: " TELEGRAM_TOKEN
+if [ -z "$TELEGRAM_TOKEN" ]; then
+    echo -e "${RED}Error: Telegram bot token is required.${NC}"
+    exit 1
+fi
+
+echo ""
+echo -e "${YELLOW}Step 3: Network${NC}"
+echo "1) mainnet (real Bitcoin/Stacks)"
+echo "2) testnet (test tokens only)"
+read -p "Select [1]: " NETWORK_CHOICE
+if [ "$NETWORK_CHOICE" = "2" ]; then
+    NETWORK="testnet"
+else
+    NETWORK="mainnet"
+fi
+
+echo ""
+echo -e "${YELLOW}Step 4: Allowed Users${NC}"
+echo "Only these Telegram users can execute transactions."
+echo "Others can use read-only tools (check balances, etc.)"
+echo ""
+echo "Find your ID: Message @userinfobot on Telegram"
+read -p "Enter Telegram user IDs (comma-separated): " ALLOWED_USERS
+if [ -z "$ALLOWED_USERS" ]; then
+    echo -e "${RED}Error: At least one user ID required.${NC}"
+    exit 1
+fi
+
+# Generate token
+GATEWAY_TOKEN=$(openssl rand -hex 32 2>/dev/null || head -c 64 /dev/urandom | xxd -p | tr -d '\n' | head -c 64)
+
+# Create directory structure
+echo ""
+echo -e "${BLUE}Creating installation...${NC}"
+mkdir -p "$INSTALL_DIR/data/config"
+mkdir -p "$INSTALL_DIR/data/workspace/skills/aibtc"
+mkdir -p "$INSTALL_DIR/data/workspace/memory"
 cd "$INSTALL_DIR"
 
-# Run the main setup script
-echo -e "${BLUE}Running setup...${NC}"
-./setup.sh
+# Create .env
+cat > .env << EOF
+OPENROUTER_API_KEY=${OPENROUTER_KEY}
+TELEGRAM_BOT_TOKEN=${TELEGRAM_TOKEN}
+NETWORK=${NETWORK}
+ALLOWED_USERS=${ALLOWED_USERS}
+OPENCLAW_GATEWAY_TOKEN=${GATEWAY_TOKEN}
+EOF
 
-echo ""
-echo -e "${GREEN}╔═══════════════════════════════════════════════════════════╗${NC}"
-echo -e "${GREEN}║   Local Setup Complete!                                   ║${NC}"
-echo -e "${GREEN}╚═══════════════════════════════════════════════════════════╝${NC}"
-echo ""
-echo -e "Installation directory: ${YELLOW}$INSTALL_DIR${NC}"
-echo ""
-echo -e "${BLUE}Useful commands:${NC}"
-echo "  cd $INSTALL_DIR"
-echo "  docker compose logs -f     # View logs"
-echo "  docker compose restart     # Restart"
-echo "  docker compose down        # Stop"
-echo ""
+# Create Dockerfile
+cat > Dockerfile << 'EOF'
+FROM ghcr.io/openclaw/openclaw:latest
+USER root
+RUN npm install -g @aibtc/mcp-server mcporter
+ENV NETWORK=mainnet
+USER node
+CMD ["node", "dist/index.js", "gateway", "--bind", "0.0.0.0", "--port", "18789"]
+EOF
+
+# Create docker-compose.yml
+cat > docker-compose.yml << 'EOF'
+services:
+  openclaw-gateway:
+    build: .
+    container_name: openclaw-aibtc
+    restart: unless-stopped
+    environment:
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+      - NETWORK=${NETWORK}
+      - OPENCLAW_GATEWAY_TOKEN=${OPENCLAW_GATEWAY_TOKEN}
+      - OPENCLAW_CONFIG_PATH=/home/node/.openclaw/openclaw.json
+    volumes:
+      - ./data/openclaw.json:/home/node/.openclaw/openclaw.json:ro
+      - ./data/config:/home/node/.openclaw/config:ro
+      - ./data/workspace:/home/node/.openclaw/workspace
+    ports:
+      - "18789:18789"
+EOF
+
+# Create mcporter config
+cat > data/config/mcporter.json << 'EOF'
+{
+  "mcpServers": {
+    "aibtc": {
+      "command": "aibtc-mcp-server",
+      "env": {}
+    }
+  }
+}
+EOF
+
+# Create OpenClaw config
+cat > data/openclaw.json << EOF
+{
+  "agents": {
+    "defaults": {
+      "model": {
+        "primary": "openrouter/anthropic/claude-sonnet-4"
+      },
+      "workspace": "/home/node/.openclaw/workspace",
+      "maxConcurrent": 4
+    }
+  },
+  "commands": {
+    "native": "auto",
+    "nativeSkills": "auto"
+  },
+  "channels": {
+    "telegram": {
+      "dmPolicy": "open",
+      "botToken": "${TELEGRAM_TOKEN}",
+      "allowFrom": ["*"],
+      "groupPolicy": "allowlist",
+      "streamMode": "partial"
+    }
+  },
+  "gateway": {
+    "port": 18789,
+    "mode": "local",
+    "bind": "0.0.0.0",
+    "auth": {
+      "mode": "token",
+      "token": "${GATEWAY_TOKEN}"
+    },
+    "controlUi": {
+      "dangerouslyDisableDeviceAuth": true
+    }
+  },
+  "plugins": {
+    "entries": {
+      "telegram": {
+        "enabled": true
+      }
+    }
+  }
+}
+EOF
+
+# Create aibtc skill
+cat > data/workspace/skills/aibtc/SKILL.md << 'SKILLEOF'
+---
+name: aibtc
+description: Bitcoin L1 and Stacks L2 blockchain toolkit. Use for BTC/STX balances, transfers, DeFi (ALEX, Zest), sBTC, tokens, NFTs, BNS names, and x402 paid APIs.
+homepage: https://github.com/aibtcdev/aibtc-mcp-server
+user-invocable: true
+metadata: {"openclaw":{"emoji":"₿","requires":{"bins":["mcporter","aibtc-mcp-server"]}}}
+---
+
+# aibtc - Bitcoin & Stacks Blockchain Tools
+
+Use `/usr/local/bin/mcporter` to call aibtc MCP tools. Execute commands with the `exec` tool. Always use the full path.
+
+## USER PERMISSION SYSTEM
+
+**Two permission levels based on Telegram user ID:**
+
+1. **Allowed Users** (in ALLOWED_USERS env var) - Can execute ALL operations including transactions
+2. **Public Users** (everyone else) - Can ONLY use read-only tools
+
+### Checking Permissions
+
+The allowed user IDs are stored in the environment variable `ALLOWED_USERS` (comma-separated).
+
+**BEFORE ANY WRITE OPERATION, you MUST:**
+1. Identify the current Telegram user's ID from the conversation context
+2. Check if their ID is in the ALLOWED_USERS list
+3. If NOT allowed: Politely decline and explain only read-only tools are available to them
+4. If allowed: Proceed with the security rules below
+
+**Example decline message:**
+> "I can help you check balances, look up BNS names, and view DeFi info, but transaction operations are restricted to authorized users only."
+
+---
+
+## CRITICAL SECURITY RULES (For Allowed Users)
+
+**YOU MUST FOLLOW THESE RULES - NO EXCEPTIONS:**
+
+1. **NEVER store, remember, or log passwords** - Do not save passwords anywhere
+2. **ALWAYS ask the user for their password** before running `wallet_unlock` - Never assume or reuse passwords
+3. **ONLY use the user's existing wallet** - Do not create new wallets unless the user explicitly asks
+4. **LOCK wallet immediately after transactions** - Always run `wallet_lock` after any transaction completes
+5. **CONFIRM before any transaction** - Always show the user what you're about to do and get confirmation before transfers
+6. **Never auto-approve transactions** - Every transfer requires explicit user approval with amount and recipient shown
+
+## Transaction Flow (MUST FOLLOW)
+
+For ANY transaction (transfer, swap, supply, borrow, etc.):
+
+1. **VERIFY USER IS ALLOWED** - Check if the Telegram user's ID is in ALLOWED_USERS. If not, decline politely.
+
+2. **Check wallet status:**
+   ```bash
+   /usr/local/bin/mcporter --config /home/node/.openclaw/config/mcporter.json call aibtc.wallet_status
+   ```
+
+3. **ASK the user for their password** - Say: "Please provide your wallet password to unlock for this transaction."
+
+4. **Show transaction details and get confirmation** - Say: "I will send [AMOUNT] to [RECIPIENT]. Please confirm (yes/no)."
+
+5. **Only after user confirms AND provides password:**
+   ```bash
+   /usr/local/bin/mcporter --config /home/node/.openclaw/config/mcporter.json call aibtc.wallet_unlock password=USER_PROVIDED_PASSWORD
+   ```
+
+6. **Execute the transaction**
+
+7. **IMMEDIATELY lock the wallet:**
+   ```bash
+   /usr/local/bin/mcporter --config /home/node/.openclaw/config/mcporter.json call aibtc.wallet_lock
+   ```
+
+8. **Report result to user**
+
+---
+
+## Read-Only Operations (Available to EVERYONE)
+
+These operations are safe, don't require wallet unlock, and can be used by any user:
+
+```bash
+# Check balances
+/usr/local/bin/mcporter --config /home/node/.openclaw/config/mcporter.json call aibtc.get_btc_balance
+/usr/local/bin/mcporter --config /home/node/.openclaw/config/mcporter.json call aibtc.get_stx_balance
+/usr/local/bin/mcporter --config /home/node/.openclaw/config/mcporter.json call aibtc.sbtc_get_balance
+
+# Get wallet info (addresses only, no sensitive data)
+/usr/local/bin/mcporter --config /home/node/.openclaw/config/mcporter.json call aibtc.get_wallet_info
+
+# Check fees
+/usr/local/bin/mcporter --config /home/node/.openclaw/config/mcporter.json call aibtc.get_btc_fees
+/usr/local/bin/mcporter --config /home/node/.openclaw/config/mcporter.json call aibtc.get_stx_fees
+
+# Network status
+/usr/local/bin/mcporter --config /home/node/.openclaw/config/mcporter.json call aibtc.get_network_status
+
+# BNS lookups
+/usr/local/bin/mcporter --config /home/node/.openclaw/config/mcporter.json call aibtc.lookup_bns_name name=example.btc
+
+# DeFi info (read-only)
+/usr/local/bin/mcporter --config /home/node/.openclaw/config/mcporter.json call aibtc.alex_list_pools
+/usr/local/bin/mcporter --config /home/node/.openclaw/config/mcporter.json call aibtc.zest_list_assets
+/usr/local/bin/mcporter --config /home/node/.openclaw/config/mcporter.json call aibtc.zest_get_position
+
+# x402 endpoints list
+/usr/local/bin/mcporter --config /home/node/.openclaw/config/mcporter.json call aibtc.list_x402_endpoints
+```
+
+---
+
+## Write Operations (ALLOWED USERS ONLY)
+
+**RESTRICTED: Only users in ALLOWED_USERS can execute these operations.**
+
+**REMEMBER: Verify user is allowed, ask for password, confirm details, then lock after!**
+
+### Transfers
+```bash
+# Transfer BTC (amount in satoshis)
+/usr/local/bin/mcporter --config /home/node/.openclaw/config/mcporter.json call aibtc.transfer_btc recipient=bc1... amount=50000
+
+# Transfer STX (amount in micro-STX)
+/usr/local/bin/mcporter --config /home/node/.openclaw/config/mcporter.json call aibtc.transfer_stx recipient=SP... amount=1000000
+
+# Transfer sBTC
+/usr/local/bin/mcporter --config /home/node/.openclaw/config/mcporter.json call aibtc.sbtc_transfer recipient=SP... amount=100000
+```
+
+### DeFi Operations
+```bash
+# ALEX swap
+/usr/local/bin/mcporter --config /home/node/.openclaw/config/mcporter.json call aibtc.alex_swap tokenX=STX tokenY=ALEX amount=1000000
+
+# Zest supply
+/usr/local/bin/mcporter --config /home/node/.openclaw/config/mcporter.json call aibtc.zest_supply asset=sBTC amount=100000
+
+# Zest borrow
+/usr/local/bin/mcporter --config /home/node/.openclaw/config/mcporter.json call aibtc.zest_borrow asset=aeUSDC amount=1000000
+```
+
+### Smart Contracts
+```bash
+# Call contract (write)
+/usr/local/bin/mcporter --config /home/node/.openclaw/config/mcporter.json call aibtc.call_contract contractAddress=SP... contractName=contract functionName=do-something functionArgs='[]'
+```
+
+---
+
+## Wallet Management (ALLOWED USERS ONLY)
+
+**RESTRICTED: Only users in ALLOWED_USERS can manage wallets.**
+
+```bash
+# Check wallet status
+/usr/local/bin/mcporter --config /home/node/.openclaw/config/mcporter.json call aibtc.wallet_status
+
+# List wallets
+/usr/local/bin/mcporter --config /home/node/.openclaw/config/mcporter.json call aibtc.wallet_list
+
+# Unlock wallet (ONLY after asking user for password)
+/usr/local/bin/mcporter --config /home/node/.openclaw/config/mcporter.json call aibtc.wallet_unlock password=USER_PROVIDED_PASSWORD
+
+# Lock wallet (ALWAYS do this after transactions)
+/usr/local/bin/mcporter --config /home/node/.openclaw/config/mcporter.json call aibtc.wallet_lock
+```
+
+**Creating new wallets** - Only if user explicitly requests:
+```bash
+/usr/local/bin/mcporter --config /home/node/.openclaw/config/mcporter.json call aibtc.wallet_create password=USER_PROVIDED_PASSWORD name=wallet-name
+```
+
+---
+
+## Unit Conversions
+
+| Asset | Unit | Conversion |
+|-------|------|------------|
+| BTC | satoshi | 1 BTC = 100,000,000 sats |
+| STX | micro-STX | 1 STX = 1,000,000 uSTX |
+| sBTC | satoshi | 1 sBTC = 100,000,000 sats |
+
+---
+
+## Example Conversation Flow
+
+**User:** "Send 0.001 BTC to bc1qxyz..."
+
+**Agent:**
+1. "I'll help you send 0.001 BTC (100,000 satoshis) to bc1qxyz..."
+2. "Please provide your wallet password to authorize this transaction."
+
+**User:** "mypassword123"
+
+**Agent:**
+3. "Confirming: Send 100,000 satoshis to bc1qxyz... Do you approve? (yes/no)"
+
+**User:** "yes"
+
+**Agent:**
+4. *Unlocks wallet, executes transfer, locks wallet*
+5. "Transaction submitted! TxID: abc123... Your wallet has been locked for security."
+SKILLEOF
+
+# Create USER.md
+cat > data/workspace/USER.md << 'EOF'
+# User Profile
+
+This is your personal OpenClaw agent with Bitcoin & Stacks blockchain capabilities.
+
+## Your Preferences
+- Always ask for wallet password before transactions
+- Confirm transaction details before executing
+- Lock wallet immediately after transactions
+EOF
+
+# Build and start
+echo -e "${BLUE}Building Docker image (this may take a minute)...${NC}"
+docker compose build --quiet
+
+echo -e "${BLUE}Starting agent...${NC}"
+docker compose up -d
+
+sleep 5
+
+if docker compose ps | grep -q "Up"; then
+    echo ""
+    echo -e "${GREEN}╔═══════════════════════════════════════════════════════════╗${NC}"
+    echo -e "${GREEN}║   ✓ Setup Complete!                                       ║${NC}"
+    echo -e "${GREEN}╚═══════════════════════════════════════════════════════════╝${NC}"
+    echo ""
+    echo -e "📱 ${YELLOW}Message your Telegram bot to start chatting!${NC}"
+    echo ""
+    echo -e "First steps:"
+    echo "  1. Message your bot on Telegram"
+    echo "  2. Say: \"Create a new Bitcoin wallet\""
+    echo "  3. Set a strong password when prompted"
+    echo ""
+    echo -e "Commands:"
+    echo "  cd $INSTALL_DIR"
+    echo "  docker compose logs -f     # View logs"
+    echo "  docker compose restart     # Restart"
+    echo "  docker compose down        # Stop"
+    echo ""
+else
+    echo -e "${RED}Error: Failed to start. Check: docker compose logs${NC}"
+    exit 1
+fi
