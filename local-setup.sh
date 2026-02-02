@@ -47,7 +47,7 @@ INSTALL_DIR="$HOME/openclaw-aibtc"
 # Check existing installation
 if [ -f "$INSTALL_DIR/.env" ]; then
     echo -e "${YELLOW}Found existing installation at $INSTALL_DIR${NC}"
-    read -p "Reconfigure? (y/N): " RECONFIG
+    read -p "Reconfigure? (y/N): " RECONFIG < /dev/tty
     if [[ ! "$RECONFIG" =~ ^[Yy]$ ]]; then
         echo -e "${BLUE}Starting existing installation...${NC}"
         cd "$INSTALL_DIR"
@@ -61,7 +61,7 @@ fi
 # Get configuration
 echo -e "${YELLOW}Step 1: OpenRouter API Key${NC}"
 echo "Get your key at: https://openrouter.ai/keys"
-read -p "Enter OpenRouter API Key: " OPENROUTER_KEY
+read -p "Enter OpenRouter API Key: " OPENROUTER_KEY < /dev/tty
 if [ -z "$OPENROUTER_KEY" ]; then
     echo -e "${RED}Error: OpenRouter API key is required.${NC}"
     exit 1
@@ -70,7 +70,7 @@ fi
 echo ""
 echo -e "${YELLOW}Step 2: Telegram Bot Token${NC}"
 echo "Create a bot via @BotFather on Telegram"
-read -p "Enter Telegram Bot Token: " TELEGRAM_TOKEN
+read -p "Enter Telegram Bot Token: " TELEGRAM_TOKEN < /dev/tty
 if [ -z "$TELEGRAM_TOKEN" ]; then
     echo -e "${RED}Error: Telegram bot token is required.${NC}"
     exit 1
@@ -80,7 +80,7 @@ echo ""
 echo -e "${YELLOW}Step 3: Network${NC}"
 echo "1) mainnet (real Bitcoin/Stacks)"
 echo "2) testnet (test tokens only)"
-read -p "Select [1]: " NETWORK_CHOICE
+read -p "Select [1]: " NETWORK_CHOICE < /dev/tty
 if [ "$NETWORK_CHOICE" = "2" ]; then
     NETWORK="testnet"
 else
