@@ -10,7 +10,29 @@ metadata: {"openclaw":{"emoji":"₿","requires":{"bins":["mcporter","aibtc-mcp-s
 
 Use `/usr/local/bin/mcporter` to call aibtc MCP tools. Execute commands with the `exec` tool. Always use the full path.
 
-## CRITICAL SECURITY RULES
+## USER PERMISSION SYSTEM
+
+**Two permission levels based on Telegram user ID:**
+
+1. **Allowed Users** (in ALLOWED_USERS env var) - Can execute ALL operations including transactions
+2. **Public Users** (everyone else) - Can ONLY use read-only tools
+
+### Checking Permissions
+
+The allowed user IDs are stored in the environment variable `ALLOWED_USERS` (comma-separated).
+
+**BEFORE ANY WRITE OPERATION, you MUST:**
+1. Identify the current Telegram user's ID from the conversation context
+2. Check if their ID is in the ALLOWED_USERS list
+3. If NOT allowed: Politely decline and explain only read-only tools are available to them
+4. If allowed: Proceed with the security rules below
+
+**Example decline message:**
+> "I can help you check balances, look up BNS names, and view DeFi info, but transaction operations are restricted to authorized users only."
+
+---
+
+## CRITICAL SECURITY RULES (For Allowed Users)
 
 **YOU MUST FOLLOW THESE RULES - NO EXCEPTIONS:**
 
@@ -25,34 +47,36 @@ Use `/usr/local/bin/mcporter` to call aibtc MCP tools. Execute commands with the
 
 For ANY transaction (transfer, swap, supply, borrow, etc.):
 
-1. **Check wallet status first:**
+1. **VERIFY USER IS ALLOWED** - Check if the Telegram user's ID is in ALLOWED_USERS. If not, decline politely.
+
+2. **Check wallet status:**
    ```bash
    /usr/local/bin/mcporter --config /home/node/.openclaw/config/mcporter.json call aibtc.wallet_status
    ```
 
-2. **ASK the user for their password** - Say: "Please provide your wallet password to unlock for this transaction."
+3. **ASK the user for their password** - Say: "Please provide your wallet password to unlock for this transaction."
 
-3. **Show transaction details and get confirmation** - Say: "I will send [AMOUNT] to [RECIPIENT]. Please confirm (yes/no)."
+4. **Show transaction details and get confirmation** - Say: "I will send [AMOUNT] to [RECIPIENT]. Please confirm (yes/no)."
 
-4. **Only after user confirms AND provides password:**
+5. **Only after user confirms AND provides password:**
    ```bash
    /usr/local/bin/mcporter --config /home/node/.openclaw/config/mcporter.json call aibtc.wallet_unlock password=USER_PROVIDED_PASSWORD
    ```
 
-5. **Execute the transaction**
+6. **Execute the transaction**
 
-6. **IMMEDIATELY lock the wallet:**
+7. **IMMEDIATELY lock the wallet:**
    ```bash
    /usr/local/bin/mcporter --config /home/node/.openclaw/config/mcporter.json call aibtc.wallet_lock
    ```
 
-7. **Report result to user**
+8. **Report result to user**
 
 ---
 
-## Read-Only Operations (No Password Needed)
+## Read-Only Operations (Available to EVERYONE)
 
-These operations are safe and don't require wallet unlock:
+These operations are safe, don't require wallet unlock, and can be used by any user:
 
 ```bash
 # Check balances
@@ -84,9 +108,11 @@ These operations are safe and don't require wallet unlock:
 
 ---
 
-## Write Operations (REQUIRE Password + Confirmation)
+## Write Operations (ALLOWED USERS ONLY)
 
-**REMEMBER: Ask for password, confirm details, then lock after!**
+**RESTRICTED: Only users in ALLOWED_USERS can execute these operations.**
+
+**REMEMBER: Verify user is allowed, ask for password, confirm details, then lock after!**
 
 ### Transfers
 ```bash
@@ -120,7 +146,9 @@ These operations are safe and don't require wallet unlock:
 
 ---
 
-## Wallet Management
+## Wallet Management (ALLOWED USERS ONLY)
+
+**RESTRICTED: Only users in ALLOWED_USERS can manage wallets.**
 
 ```bash
 # Check wallet status

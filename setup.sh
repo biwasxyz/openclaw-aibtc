@@ -101,6 +101,21 @@ if [ "$SKIP_CONFIG" != "true" ]; then
         NETWORK="mainnet"
     fi
 
+    # Allowed users for transactions
+    echo ""
+    echo -e "${YELLOW}Step 4: Allowed Users (Transaction Security)${NC}"
+    echo "Only these Telegram users can execute transactions."
+    echo "Others can still use read-only tools (check balances, etc.)"
+    echo ""
+    echo "To find your Telegram ID: Message @userinfobot on Telegram"
+    echo ""
+    read -p "Enter allowed Telegram user IDs (comma-separated): " ALLOWED_USERS
+
+    if [ -z "$ALLOWED_USERS" ]; then
+        echo -e "${RED}Error: At least one allowed user ID is required for security.${NC}"
+        exit 1
+    fi
+
     # Generate gateway token
     GATEWAY_TOKEN=$(openssl rand -hex 32 2>/dev/null || head -c 64 /dev/urandom | xxd -p | tr -d '\n' | head -c 64)
 
@@ -118,6 +133,10 @@ TELEGRAM_BOT_TOKEN=${TELEGRAM_TOKEN}
 
 # Network: mainnet or testnet
 NETWORK=${NETWORK}
+
+# Allowed Telegram user IDs for transactions (comma-separated)
+# Others can use read-only tools but cannot execute transactions
+ALLOWED_USERS=${ALLOWED_USERS}
 
 # Gateway token (auto-generated, keep secret)
 OPENCLAW_GATEWAY_TOKEN=${GATEWAY_TOKEN}
