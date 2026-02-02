@@ -14,252 +14,637 @@ const HTML = `<!DOCTYPE html>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>OpenClaw + aibtc | Bitcoin Agent Setup</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --btc-orange: #f7931a;
+      --btc-orange-dim: rgba(247, 147, 26, 0.15);
+      --btc-orange-glow: rgba(247, 147, 26, 0.4);
+      --bg-primary: #08080a;
+      --bg-secondary: #0d0d10;
+      --bg-card: rgba(255, 255, 255, 0.03);
+      --bg-card-hover: rgba(255, 255, 255, 0.05);
+      --border-subtle: rgba(255, 255, 255, 0.08);
+      --border-orange: rgba(247, 147, 26, 0.25);
+      --text-primary: #f0f0f0;
+      --text-secondary: #888;
+      --text-muted: #555;
+      --terminal-green: #4ade80;
+      --success: #22c55e;
+      --radius-sm: 6px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
 
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-      background: linear-gradient(135deg, #0f0f0f 0%, #1a1a2e 100%);
-      color: #fff;
+      font-family: 'Outfit', -apple-system, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
       min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 2rem;
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    /* Animated grid background */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-image:
+        linear-gradient(rgba(247, 147, 26, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(247, 147, 26, 0.03) 1px, transparent 1px);
+      background-size: 60px 60px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Radial glow from top */
+    body::after {
+      content: '';
+      position: fixed;
+      top: -50%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: 800px;
+      height: 600px;
+      background: radial-gradient(ellipse, var(--btc-orange-glow) 0%, transparent 70%);
+      opacity: 0.15;
+      pointer-events: none;
+      z-index: 0;
     }
 
     .container {
-      max-width: 700px;
+      position: relative;
+      z-index: 1;
       width: 100%;
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 2rem 1rem;
+    }
+
+    /* Header */
+    .header {
+      text-align: center;
+      margin-bottom: 2.5rem;
+      animation: fadeInDown 0.6s ease-out;
     }
 
     .logo {
-      font-size: 4rem;
-      margin-bottom: 1rem;
-      text-align: center;
+      font-size: clamp(3rem, 10vw, 4.5rem);
+      margin-bottom: 0.75rem;
+      display: inline-block;
+      animation: float 3s ease-in-out infinite;
+      filter: drop-shadow(0 0 30px var(--btc-orange-glow));
     }
 
     h1 {
-      font-size: 2.5rem;
-      text-align: center;
+      font-family: 'Outfit', sans-serif;
+      font-size: clamp(1.75rem, 6vw, 2.75rem);
+      font-weight: 700;
       margin-bottom: 0.5rem;
-      background: linear-gradient(90deg, #f7931a, #ff9500);
+      background: linear-gradient(135deg, var(--btc-orange) 0%, #ffa726 50%, var(--btc-orange) 100%);
+      background-size: 200% auto;
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
+      animation: shimmer 3s linear infinite;
     }
 
     .subtitle {
-      text-align: center;
-      color: #888;
-      margin-bottom: 2rem;
-      font-size: 1.1rem;
+      color: var(--text-secondary);
+      font-size: clamp(0.95rem, 3vw, 1.1rem);
+      font-weight: 400;
     }
 
+    /* Cards */
     .card {
-      background: rgba(255,255,255,0.05);
-      border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 12px;
-      padding: 1.5rem;
-      margin-bottom: 1.5rem;
-    }
-
-    .card h2 {
-      font-size: 1rem;
-      color: #888;
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 1.25rem;
       margin-bottom: 1rem;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
+      backdrop-filter: blur(10px);
+      transition: all 0.3s ease;
+      animation: fadeInUp 0.5s ease-out backwards;
     }
 
-    .command-box {
-      display: flex;
-      align-items: center;
-      background: #0d0d0d;
-      border-radius: 8px;
-      padding: 1rem;
-      font-family: 'SF Mono', Monaco, 'Courier New', monospace;
-      font-size: 0.95rem;
-      overflow-x: auto;
+    .card:nth-child(1) { animation-delay: 0.1s; }
+    .card:nth-child(2) { animation-delay: 0.15s; }
+    .card:nth-child(3) { animation-delay: 0.2s; }
+    .card:nth-child(4) { animation-delay: 0.25s; }
+
+    .card:hover {
+      background: var(--bg-card-hover);
+      border-color: rgba(255, 255, 255, 0.12);
+      transform: translateY(-2px);
     }
 
-    .command-box code {
-      flex: 1;
-      color: #4ade80;
-      white-space: nowrap;
+    .card--highlight {
+      border-color: var(--border-orange);
+      background: var(--btc-orange-dim);
     }
 
-    .copy-btn {
-      background: #f7931a;
-      color: #000;
-      border: none;
-      padding: 0.5rem 1rem;
-      border-radius: 6px;
-      cursor: pointer;
-      font-weight: 600;
-      font-size: 0.85rem;
-      margin-left: 1rem;
-      transition: all 0.2s;
-      white-space: nowrap;
+    .card--highlight:hover {
+      border-color: rgba(247, 147, 26, 0.4);
+      background: rgba(247, 147, 26, 0.12);
     }
 
-    .copy-btn:hover {
-      background: #ff9500;
-      transform: scale(1.05);
-    }
-
-    .copy-btn.copied {
-      background: #4ade80;
-    }
-
-    .features {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 1rem;
-      margin-bottom: 2rem;
-    }
-
-    .feature {
-      background: rgba(255,255,255,0.03);
-      border-radius: 8px;
-      padding: 1rem;
-      text-align: center;
-    }
-
-    .feature-icon {
-      font-size: 1.5rem;
-      margin-bottom: 0.5rem;
-    }
-
-    .feature-title {
-      font-weight: 600;
-      margin-bottom: 0.25rem;
-    }
-
-    .feature-desc {
-      font-size: 0.85rem;
-      color: #888;
-    }
-
-    .links {
-      display: flex;
-      justify-content: center;
-      gap: 1.5rem;
-      flex-wrap: wrap;
-    }
-
-    .links a {
-      color: #888;
-      text-decoration: none;
+    .card__header {
       display: flex;
       align-items: center;
       gap: 0.5rem;
-      transition: color 0.2s;
+      margin-bottom: 1rem;
+    }
+
+    .card__icon {
+      font-size: 1.25rem;
+    }
+
+    .card__title {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    /* Command box - terminal style */
+    .terminal {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+    }
+
+    .terminal__bar {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 0.6rem 0.75rem;
+      background: rgba(255, 255, 255, 0.02);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .terminal__dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--text-muted);
+    }
+
+    .terminal__dot--red { background: #ff5f57; }
+    .terminal__dot--yellow { background: #ffbd2e; }
+    .terminal__dot--green { background: #28c840; }
+
+    .terminal__body {
+      display: flex;
+      align-items: center;
+      padding: 1rem;
+      gap: 0.75rem;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .terminal__prompt {
+      color: var(--btc-orange);
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 600;
+      font-size: 0.9rem;
+      flex-shrink: 0;
+    }
+
+    .terminal__command {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: clamp(0.8rem, 2.5vw, 0.9rem);
+      color: var(--terminal-green);
+      white-space: nowrap;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .copy-btn {
+      background: var(--btc-orange);
+      color: #000;
+      border: none;
+      padding: 0.6rem 1rem;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      font-family: 'Outfit', sans-serif;
+      font-weight: 600;
+      font-size: 0.85rem;
+      transition: all 0.2s ease;
+      flex-shrink: 0;
+      min-height: 44px;
+      min-width: 70px;
+    }
+
+    .copy-btn:hover {
+      background: #ffa726;
+      transform: scale(1.02);
+    }
+
+    .copy-btn:active {
+      transform: scale(0.98);
+    }
+
+    .copy-btn--copied {
+      background: var(--success);
+    }
+
+    .card__note {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      text-align: center;
+      margin-top: 0.75rem;
+      line-height: 1.5;
+    }
+
+    /* Prerequisites card */
+    .prereq {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+    }
+
+    .prereq__section {
+      margin-bottom: 1rem;
+    }
+
+    .prereq__section:last-child {
+      margin-bottom: 0;
+    }
+
+    .prereq__heading {
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 0.5rem;
+      font-size: 0.85rem;
+    }
+
+    .prereq__list {
+      margin-left: 1.25rem;
+      margin-bottom: 0;
+    }
+
+    .prereq__list li {
+      margin-bottom: 0.4rem;
+      line-height: 1.5;
+    }
+
+    .prereq__list a {
+      color: var(--btc-orange);
+      text-decoration: none;
+      transition: opacity 0.2s;
+    }
+
+    .prereq__list a:hover {
+      opacity: 0.8;
+    }
+
+    .prereq__code {
+      display: inline-block;
+      background: var(--bg-secondary);
+      padding: 2px 8px;
+      border-radius: var(--radius-sm);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      margin-top: 4px;
+    }
+
+    /* Features grid */
+    .features {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.75rem;
+      margin-bottom: 2rem;
+      animation: fadeInUp 0.5s ease-out 0.3s backwards;
+    }
+
+    .feature {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 1rem;
+      text-align: center;
+      transition: all 0.3s ease;
+    }
+
+    .feature:hover {
+      background: var(--bg-card-hover);
+      transform: translateY(-2px);
+    }
+
+    .feature__icon {
+      font-size: 1.5rem;
+      margin-bottom: 0.4rem;
+    }
+
+    .feature__title {
+      font-weight: 600;
+      font-size: 0.9rem;
+      margin-bottom: 0.2rem;
+    }
+
+    .feature__desc {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      line-height: 1.4;
+    }
+
+    /* Footer links */
+    .links {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+      animation: fadeInUp 0.5s ease-out 0.35s backwards;
+    }
+
+    .links a {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 0.9rem;
+      padding: 0.5rem 0.75rem;
+      border-radius: var(--radius-sm);
+      transition: all 0.2s ease;
+      min-height: 44px;
     }
 
     .links a:hover {
-      color: #f7931a;
+      color: var(--btc-orange);
+      background: var(--btc-orange-dim);
     }
 
-    .requirements {
-      font-size: 0.9rem;
-      color: #666;
-      text-align: center;
-      margin-top: 1rem;
+    .links svg {
+      width: 18px;
+      height: 18px;
+      flex-shrink: 0;
     }
 
-    @media (max-width: 600px) {
-      h1 { font-size: 1.8rem; }
-      .command-box { flex-direction: column; gap: 1rem; }
-      .copy-btn { margin-left: 0; width: 100%; }
+    /* Animations */
+    @keyframes fadeInDown {
+      from {
+        opacity: 0;
+        transform: translateY(-20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+
+    @keyframes shimmer {
+      to { background-position: 200% center; }
+    }
+
+    /* Tablet and up */
+    @media (min-width: 640px) {
+      .container {
+        padding: 3rem 1.5rem;
+      }
+
+      .header {
+        margin-bottom: 3rem;
+      }
+
+      .card {
+        padding: 1.5rem;
+        margin-bottom: 1.25rem;
+      }
+
+      .features {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1rem;
+      }
+
+      .links {
+        gap: 1.5rem;
+      }
+    }
+
+    /* Desktop */
+    @media (min-width: 1024px) {
+      .container {
+        padding: 4rem 2rem;
+      }
+
+      .card:hover {
+        transform: translateY(-3px);
+      }
+
+      .feature:hover {
+        transform: translateY(-4px);
+      }
+    }
+
+    /* Mobile-specific adjustments */
+    @media (max-width: 480px) {
+      .terminal__body {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.75rem;
+      }
+
+      .terminal__prompt {
+        display: none;
+      }
+
+      .copy-btn {
+        width: 100%;
+      }
+
+      .card__note {
+        font-size: 0.75rem;
+      }
+
+      .prereq__code {
+        font-size: 0.7rem;
+        word-break: break-all;
+        white-space: normal;
+      }
+    }
+
+    /* Reduced motion */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+      }
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <div class="logo">₿</div>
-    <h1>OpenClaw + aibtc</h1>
-    <p class="subtitle">Deploy your Bitcoin & Stacks AI agent in one command</p>
+    <header class="header">
+      <div class="logo">₿</div>
+      <h1>OpenClaw + aibtc</h1>
+      <p class="subtitle">Deploy your Bitcoin & Stacks AI agent in one command</p>
+    </header>
 
-    <div class="card">
-      <h2>🚀 Quick Install</h2>
-      <div class="command-box">
-        <code>curl -sSL sh.biwas.xyz | sh</code>
-        <button class="copy-btn" onclick="copyCommand(this, 'curl -sSL sh.biwas.xyz | sh')">Copy</button>
+    <main>
+      <div class="card">
+        <div class="card__header">
+          <span class="card__icon">🚀</span>
+          <h2 class="card__title">Quick Install (VPS)</h2>
+        </div>
+        <div class="terminal">
+          <div class="terminal__bar">
+            <span class="terminal__dot terminal__dot--red"></span>
+            <span class="terminal__dot terminal__dot--yellow"></span>
+            <span class="terminal__dot terminal__dot--green"></span>
+          </div>
+          <div class="terminal__body">
+            <span class="terminal__prompt">$</span>
+            <code class="terminal__command">curl -sSL sh.biwas.xyz | sh</code>
+            <button class="copy-btn" onclick="copyCommand(this, 'curl -sSL sh.biwas.xyz | sh')">Copy</button>
+          </div>
+        </div>
+        <p class="card__note">2GB RAM, 25GB disk • Ubuntu/Debian/CentOS • Installs Docker automatically</p>
       </div>
-      <p class="requirements">Requires: 2GB RAM, 25GB disk • Ubuntu/Debian/CentOS • Installs Docker automatically</p>
-    </div>
 
-    <div class="card">
-      <h2>💻 Local (Docker Desktop)</h2>
-      <div class="command-box">
-        <code>curl -sSL sh.biwas.xyz/local | sh</code>
-        <button class="copy-btn" onclick="copyCommand(this, 'curl -sSL sh.biwas.xyz/local | sh')">Copy</button>
+      <div class="card">
+        <div class="card__header">
+          <span class="card__icon">💻</span>
+          <h2 class="card__title">Local (Docker Desktop)</h2>
+        </div>
+        <div class="terminal">
+          <div class="terminal__bar">
+            <span class="terminal__dot terminal__dot--red"></span>
+            <span class="terminal__dot terminal__dot--yellow"></span>
+            <span class="terminal__dot terminal__dot--green"></span>
+          </div>
+          <div class="terminal__body">
+            <span class="terminal__prompt">$</span>
+            <code class="terminal__command">curl -sSL sh.biwas.xyz/local | sh</code>
+            <button class="copy-btn" onclick="copyCommand(this, 'curl -sSL sh.biwas.xyz/local | sh')">Copy</button>
+          </div>
+        </div>
+        <p class="card__note">Requires Docker Desktop installed and running</p>
       </div>
-      <p class="requirements">Requires: Docker Desktop installed and running</p>
-    </div>
 
-    <div class="card">
-      <h2>📋 Prerequisites</h2>
-      <div style="font-size: 0.9rem; color: #aaa;">
-        <p style="margin-bottom: 0.5rem;"><strong>You'll need:</strong></p>
-        <ul style="margin-left: 1.5rem; margin-bottom: 1rem;">
-          <li>OpenRouter API Key → <a href="https://openrouter.ai/keys" target="_blank" style="color: #f7931a;">openrouter.ai/keys</a></li>
-          <li>Telegram Bot Token → Message <a href="https://t.me/BotFather" target="_blank" style="color: #f7931a;">@BotFather</a></li>
-        </ul>
-        <p style="margin-bottom: 0.5rem;"><strong>For VPS deploy:</strong></p>
-        <ol style="margin-left: 1.5rem;">
-          <li style="margin-bottom: 0.5rem;">Generate SSH key (run locally):<br><code style="background: #0d0d0d; padding: 2px 6px; border-radius: 4px;">ssh-keygen -t ed25519</code></li>
-          <li style="margin-bottom: 0.5rem;">Copy your public key:<br><code style="background: #0d0d0d; padding: 2px 6px; border-radius: 4px;">cat ~/.ssh/id_ed25519.pub</code></li>
-          <li style="margin-bottom: 0.5rem;">Create VPS (2GB RAM, 25GB disk) on <a href="https://digitalocean.com" target="_blank" style="color: #f7931a;">DigitalOcean</a>, <a href="https://hetzner.com" target="_blank" style="color: #f7931a;">Hetzner</a>, or <a href="https://vultr.com" target="_blank" style="color: #f7931a;">Vultr</a></li>
-          <li style="margin-bottom: 0.5rem;">Choose Ubuntu 24.04, paste your public key when asked</li>
-          <li>SSH in: <code style="background: #0d0d0d; padding: 2px 6px; border-radius: 4px;">ssh root@your-vps-ip</code></li>
-        </ol>
+      <div class="card card--highlight">
+        <div class="card__header">
+          <span class="card__icon">🔄</span>
+          <h2 class="card__title">Existing Users — Update Skill</h2>
+        </div>
+        <div class="terminal">
+          <div class="terminal__bar">
+            <span class="terminal__dot terminal__dot--red"></span>
+            <span class="terminal__dot terminal__dot--yellow"></span>
+            <span class="terminal__dot terminal__dot--green"></span>
+          </div>
+          <div class="terminal__body">
+            <span class="terminal__prompt">$</span>
+            <code class="terminal__command">curl -sSL sh.biwas.xyz/update-skill.sh | sh</code>
+            <button class="copy-btn" onclick="copyCommand(this, 'curl -sSL sh.biwas.xyz/update-skill.sh | sh')">Copy</button>
+          </div>
+        </div>
+        <p class="card__note">Daemon mode for wallet persistence • Backups existing skill • Restarts container</p>
       </div>
-    </div>
 
-    <div class="features">
-      <div class="feature">
-        <div class="feature-icon">⚡</div>
-        <div class="feature-title">Bitcoin L1</div>
-        <div class="feature-desc">Send BTC, check balances, fees</div>
+      <div class="card">
+        <div class="card__header">
+          <span class="card__icon">📋</span>
+          <h2 class="card__title">Prerequisites</h2>
+        </div>
+        <div class="prereq">
+          <div class="prereq__section">
+            <p class="prereq__heading">You'll need:</p>
+            <ul class="prereq__list">
+              <li>OpenRouter API Key → <a href="https://openrouter.ai/keys" target="_blank">openrouter.ai/keys</a></li>
+              <li>Telegram Bot Token → <a href="https://t.me/BotFather" target="_blank">@BotFather</a></li>
+            </ul>
+          </div>
+          <div class="prereq__section">
+            <p class="prereq__heading">For VPS deploy:</p>
+            <ol class="prereq__list">
+              <li>Generate SSH key:<br><code class="prereq__code">ssh-keygen -t ed25519</code></li>
+              <li>Copy public key:<br><code class="prereq__code">cat ~/.ssh/id_ed25519.pub</code></li>
+              <li>Create VPS on <a href="https://digitalocean.com" target="_blank">DigitalOcean</a>, <a href="https://hetzner.com" target="_blank">Hetzner</a>, or <a href="https://vultr.com" target="_blank">Vultr</a></li>
+              <li>Choose Ubuntu 24.04, paste your public key</li>
+              <li>SSH in:<br><code class="prereq__code">ssh root@your-vps-ip</code></li>
+            </ol>
+          </div>
+        </div>
       </div>
-      <div class="feature">
-        <div class="feature-icon">🔗</div>
-        <div class="feature-title">Stacks L2</div>
-        <div class="feature-desc">STX, smart contracts, DeFi</div>
-      </div>
-      <div class="feature">
-        <div class="feature-icon">💱</div>
-        <div class="feature-title">DeFi</div>
-        <div class="feature-desc">ALEX swaps, Zest lending</div>
-      </div>
-      <div class="feature">
-        <div class="feature-icon">💬</div>
-        <div class="feature-title">Telegram</div>
-        <div class="feature-desc">Chat with your agent</div>
-      </div>
-    </div>
 
-    <div class="links">
-      <a href="${GITHUB_REPO}" target="_blank">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
-        GitHub
-      </a>
-      <a href="${GITHUB_REPO}#readme" target="_blank">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm-1 2l5 5h-5V4zM6 20V4h6v6h6v10H6z"/></svg>
-        Docs
-      </a>
-      <a href="https://github.com/aibtcdev/aibtc-mcp-server" target="_blank">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
-        aibtc-mcp
-      </a>
-      <a href="https://openclaw.ai" target="_blank">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
-        OpenClaw
-      </a>
-    </div>
+      <div class="features">
+        <div class="feature">
+          <div class="feature__icon">⚡</div>
+          <div class="feature__title">Bitcoin L1</div>
+          <div class="feature__desc">Send BTC, balances, fees</div>
+        </div>
+        <div class="feature">
+          <div class="feature__icon">🔗</div>
+          <div class="feature__title">Stacks L2</div>
+          <div class="feature__desc">STX, contracts, DeFi</div>
+        </div>
+        <div class="feature">
+          <div class="feature__icon">💱</div>
+          <div class="feature__title">DeFi</div>
+          <div class="feature__desc">ALEX, Zest Protocol</div>
+        </div>
+        <div class="feature">
+          <div class="feature__icon">💬</div>
+          <div class="feature__title">Telegram</div>
+          <div class="feature__desc">Chat with agent</div>
+        </div>
+      </div>
+
+      <nav class="links">
+        <a href="${GITHUB_REPO}" target="_blank">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+          GitHub
+        </a>
+        <a href="${GITHUB_REPO}#readme" target="_blank">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm-1 2l5 5h-5V4zM6 20V4h6v6h6v10H6z"/></svg>
+          Docs
+        </a>
+        <a href="https://github.com/aibtcdev/aibtc-mcp-server" target="_blank">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+          aibtc-mcp
+        </a>
+        <a href="https://openclaw.ai" target="_blank">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+          OpenClaw
+        </a>
+      </nav>
+    </main>
   </div>
 
   <script>
@@ -267,10 +652,25 @@ const HTML = `<!DOCTYPE html>
       navigator.clipboard.writeText(text).then(() => {
         const original = btn.textContent;
         btn.textContent = 'Copied!';
-        btn.classList.add('copied');
+        btn.classList.add('copy-btn--copied');
         setTimeout(() => {
           btn.textContent = original;
-          btn.classList.remove('copied');
+          btn.classList.remove('copy-btn--copied');
+        }, 2000);
+      }).catch(() => {
+        // Fallback for older browsers
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+        const original = btn.textContent;
+        btn.textContent = 'Copied!';
+        btn.classList.add('copy-btn--copied');
+        setTimeout(() => {
+          btn.textContent = original;
+          btn.classList.remove('copy-btn--copied');
         }, 2000);
       });
     }
