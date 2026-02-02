@@ -53,7 +53,7 @@ Any provider works. Recommended:
 - [Vultr](https://vultr.com) - $6/mo instance
 - [Linode](https://linode.com) - $5/mo nanode
 
-**Minimum specs:** 1 CPU, 1GB RAM, 20GB disk
+**Minimum specs:** 1 CPU, 2GB RAM, 25GB disk (~$12/mo)
 
 #### Step 2: SSH into your VPS
 

@@ -188,7 +188,7 @@ const HTML = `<!DOCTYPE html>
         <code>curl -sSL sh.biwas.xyz | sh</code>
         <button class="copy-btn" onclick="copyCommand(this, 'curl -sSL sh.biwas.xyz | sh')">Copy</button>
       </div>
-      <p class="requirements">Works on any VPS (Ubuntu, Debian, CentOS) • Installs Docker automatically</p>
+      <p class="requirements">Requires: 2GB RAM, 25GB disk • Ubuntu/Debian/CentOS • Installs Docker automatically</p>
     </div>
 
     <div class="card">
@@ -196,6 +196,18 @@ const HTML = `<!DOCTYPE html>
       <div class="command-box">
         <code>curl -sSL sh.biwas.xyz/local | sh</code>
         <button class="copy-btn" onclick="copyCommand(this, 'curl -sSL sh.biwas.xyz/local | sh')">Copy</button>
+      </div>
+      <p class="requirements">Requires: Docker Desktop installed and running</p>
+    </div>
+
+    <div class="card">
+      <h2>📋 Prerequisites</h2>
+      <div style="font-size: 0.9rem; color: #aaa;">
+        <p style="margin-bottom: 0.5rem;"><strong>You'll need:</strong></p>
+        <ul style="margin-left: 1.5rem; margin-bottom: 1rem;">
+          <li>OpenRouter API Key → <a href="https://openrouter.ai/keys" target="_blank" style="color: #f7931a;">openrouter.ai/keys</a></li>
+          <li>Telegram Bot Token → Message <a href="https://t.me/BotFather" target="_blank" style="color: #f7931a;">@BotFather</a></li>
+        </ul>
       </div>
     </div>
 
