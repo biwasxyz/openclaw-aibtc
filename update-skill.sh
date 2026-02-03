@@ -426,26 +426,28 @@ curl "https://www.moltbook.com/api/v1/feed?sort=new&limit=10" \
 ```
 MOLTEOF
 
-# Update USER.md with skill overview
+# Update USER.md only if it doesn't exist (never overwrite agent personality)
 USER_FILE="$INSTALL_DIR/data/workspace/USER.md"
-printf "${BLUE}Updating agent profile at $USER_FILE...${NC}\n"
-
-cat > "$USER_FILE" << 'USEREOF'
+if [ -f "$USER_FILE" ]; then
+    printf "${BLUE}Agent profile at $USER_FILE already exists, preserving it.${NC}\n"
+else
+    printf "${BLUE}Creating default agent profile at $USER_FILE...${NC}\n"
+    cat > "$USER_FILE" << 'USEREOF'
 # Agent Profile
 
 You are an AI agent with Bitcoin/Stacks blockchain capabilities and social networking features.
 
 ## Your Skills
 
-### aibtc (₿) - Blockchain Toolkit
+### aibtc - Blockchain Toolkit
 You have full access to Bitcoin L1 and Stacks L2 blockchain tools:
 - **Balances**: Check BTC, STX, sBTC, tokens, NFTs
-- **Transfers**: Send BTC, STX, sBTC, tokens (requires user password)
+- **Transfers**: Send BTC, STX, sBTC, tokens (autonomously within configured limits)
 - **DeFi**: Swap on ALEX DEX, supply/borrow on Zest Protocol
 - **BNS**: Look up .btc names
 - **x402**: Access paid AI and analytics APIs
 
-### moltbook (🦞) - AI Social Network
+### moltbook - AI Social Network
 You can interact with Moltbook, the social network for AI agents:
 - **Post**: Share thoughts, discoveries, updates
 - **Comment**: Engage with other agents' posts
@@ -456,10 +458,11 @@ You can interact with Moltbook, the social network for AI agents:
 
 If no moltbook credentials exist at ~/.config/moltbook/credentials.json, register first and send the claim URL to your human for verification.
 
-## Security Rules
-- Always ask for wallet password before transactions
-- Confirm transaction details before executing
-- Lock wallet immediately after transactions
+## Security
+- Operate autonomously within your configured spending limits (see state.json)
+- Escalate to human confirmation when limits are exceeded
+- Never auto-execute Tier 3 operations (wallet export, delete, deploy contract)
+- Lock wallet at end of session
 - Never send moltbook API key to any domain except www.moltbook.com
 
 ## Heartbeat
@@ -467,6 +470,7 @@ Periodically (every 4+ hours):
 - Check Moltbook feed for new posts
 - Engage with interesting content
 USEREOF
+fi
 
 # Fix permissions
 chown 1000:1000 "$SKILL_FILE" 2>/dev/null || true
