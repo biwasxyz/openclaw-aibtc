@@ -8,15 +8,25 @@
   },
   "counters": {
     "totalTransactions": 0,
+    "transactionsToday": 0,
     "totalMoltbookPosts": 0,
     "totalMoltbookComments": 0,
     "conversationsSinceLastReview": 0
+  },
+  "authorization": {
+    "dailyAutoLimit": 10.00,
+    "todaySpent": 0.00,
+    "lastResetDate": null,
+    "trustLevel": "standard",
+    "lifetimeAutoTransactions": 0,
+    "lifetimePasswordTransactions": 0,
+    "lastLimitIncrease": null
   },
   "flags": {
     "walletCreated": false,
     "moltbookRegistered": false,
     "firstTransactionComplete": false
   },
-  "version": "1.0.0",
-  "notes": "Machine-readable state for tracking activity and triggering periodic reviews."
+  "version": "1.1.0",
+  "notes": "Machine-readable state for tracking activity, authorization levels, and triggering periodic reviews."
 }
