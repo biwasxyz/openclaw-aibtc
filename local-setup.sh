@@ -629,6 +629,11 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cp "$SCRIPT_DIR/templates/USER.md" data/workspace/USER.md
 printf "${GREEN}✓ Installed USER.md${NC}\n"
 
+# Copy memory templates
+printf "${BLUE}Setting up memory templates...${NC}\n"
+cp -r "$SCRIPT_DIR/templates/memory/"* data/workspace/memory/
+printf "${GREEN}✓ Installed memory templates${NC}\n"
+
 # Build and start
 printf "${BLUE}Building Docker image (this may take a minute)...${NC}\n"
 docker compose build
