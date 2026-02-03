@@ -686,6 +686,12 @@ $SUDO cp "$SCRIPT_DIR/templates/USER.md" data/workspace/USER.md
 $SUDO chown 1000:1000 data/workspace/USER.md
 printf "${GREEN}✓ Installed USER.md${NC}\n"
 
+# Copy memory templates
+printf "${BLUE}Setting up memory templates...${NC}\n"
+$SUDO cp -r "$SCRIPT_DIR/templates/memory/"* data/workspace/memory/
+$SUDO chown -R 1000:1000 data/workspace/memory/
+printf "${GREEN}✓ Installed memory templates${NC}\n"
+
 # Build and start
 printf "${BLUE}Building Docker image (this may take 1-2 minutes)...${NC}\n"
 $SUDO docker compose build
