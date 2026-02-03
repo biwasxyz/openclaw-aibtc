@@ -731,15 +731,75 @@ Periodically (every 4+ hours):
 USEREOF
 fi
 
+# Migrate state.json: add authorization fields if missing
+STATE_FILE="$INSTALL_DIR/data/workspace/memory/state.json"
+if [ -f "$STATE_FILE" ]; then
+    # Check if authorization block already exists
+    if grep -q '"authorization"' "$STATE_FILE" 2>/dev/null; then
+        printf "${BLUE}state.json already has authorization config, skipping migration.${NC}\n"
+    else
+        printf "${BLUE}Migrating state.json: adding authorization fields...${NC}\n"
+        if command -v python3 >/dev/null 2>&1; then
+            python3 -c "
+import json, sys
+try:
+    with open('$STATE_FILE', 'r') as f:
+        state = json.load(f)
+    state['authorization'] = {
+        'autonomyLevel': 'balanced',
+        'dailyAutoLimit': 10.00,
+        'perTransactionLimit': 5.00,
+        'todaySpent': 0.00,
+        'lastResetDate': None,
+        'trustLevel': 'standard',
+        'lifetimeAutoTransactions': 0,
+        'lifetimePasswordTransactions': 0,
+        'lastLimitIncrease': None
+    }
+    state['version'] = '1.2.0'
+    with open('$STATE_FILE', 'w') as f:
+        json.dump(state, f, indent=2)
+        f.write('\n')
+    print('Migration complete.')
+except Exception as e:
+    print(f'Warning: state.json migration failed: {e}', file=sys.stderr)
+    sys.exit(1)
+"
+        elif command -v jq >/dev/null 2>&1; then
+            TMP_STATE="$STATE_FILE.tmp"
+            jq '. + {
+                "authorization": {
+                    "autonomyLevel": "balanced",
+                    "dailyAutoLimit": 10.00,
+                    "perTransactionLimit": 5.00,
+                    "todaySpent": 0.00,
+                    "lastResetDate": null,
+                    "trustLevel": "standard",
+                    "lifetimeAutoTransactions": 0,
+                    "lifetimePasswordTransactions": 0,
+                    "lastLimitIncrease": null
+                },
+                "version": "1.2.0"
+            }' "$STATE_FILE" > "$TMP_STATE" && mv "$TMP_STATE" "$STATE_FILE"
+            printf "Migration complete.\n"
+        else
+            printf "${BLUE}Warning: Neither python3 nor jq found. Skipping state.json migration.${NC}\n"
+            printf "  Add authorization config manually or re-run after installing python3 or jq.\n"
+        fi
+    fi
+else
+    printf "${BLUE}No existing state.json found, skipping migration (setup will create it).${NC}\n"
+fi
+
 # Fix permissions
 chown 1000:1000 "$SKILL_FILE" 2>/dev/null || true
 chown 1000:1000 "$MOLTBOOK_FILE" 2>/dev/null || true
 chown 1000:1000 "$USER_FILE" 2>/dev/null || true
 chown 1000:1000 "$MCPORTER_CONFIG" 2>/dev/null || true
+chown 1000:1000 "$STATE_FILE" 2>/dev/null || true
 
-printf "${GREEN}✓ aibtc skill updated!${NC}\n"
+printf "${GREEN}✓ aibtc skill updated (autonomous tier model)!${NC}\n"
 printf "${GREEN}✓ moltbook skill installed!${NC}\n"
-printf "${GREEN}✓ Agent profile updated with skill overview!${NC}\n"
 printf "${GREEN}✓ mcporter config updated with keep-alive!${NC}\n"
 printf "${BLUE}Restarting container...${NC}\n"
 
@@ -747,6 +807,9 @@ cd "$INSTALL_DIR"
 docker compose restart
 
 printf "${GREEN}✓ Done! Your agent now has:${NC}\n"
+printf "  - Autonomous operation with 4-tier security model\n"
+printf "  - Session-based wallet unlock (no per-transaction passwords)\n"
+printf "  - Spending limits and daily caps in state.json\n"
 printf "  - Daemon mode for wallet persistence\n"
 printf "  - Moltbook social network integration\n"
 printf "${BLUE}Note: The daemon will auto-start on first mcporter call.${NC}\n"
