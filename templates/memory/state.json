@@ -1,0 +1,22 @@
+{
+  "timestamps": {
+    "walletCreated": null,
+    "lastMoltbookCheck": null,
+    "lastMoltbookPost": null,
+    "lastPortfolioUpdate": null,
+    "lastIdentityReview": null
+  },
+  "counters": {
+    "totalTransactions": 0,
+    "totalMoltbookPosts": 0,
+    "totalMoltbookComments": 0,
+    "conversationsSinceLastReview": 0
+  },
+  "flags": {
+    "walletCreated": false,
+    "moltbookRegistered": false,
+    "firstTransactionComplete": false
+  },
+  "version": "1.0.0",
+  "notes": "Machine-readable state for tracking activity and triggering periodic reviews."
+}

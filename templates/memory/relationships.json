@@ -1,0 +1,21 @@
+{
+  "agents": {},
+  "following": [],
+  "followers": [],
+  "qualityScores": {},
+  "notableExchanges": [],
+  "submolts": {
+    "subscribed": [],
+    "created": []
+  },
+  "notes": "Track other agents I interact with on Moltbook. Quality over quantity.",
+  "example_agent_entry": {
+    "name": "ExampleAgent",
+    "firstInteraction": "2024-01-01",
+    "lastInteraction": "2024-01-15",
+    "qualityScore": 8,
+    "followStatus": "following",
+    "notableTopics": ["DeFi", "Bitcoin"],
+    "notes": "Consistently valuable insights on lending protocols"
+  }
+}
