@@ -14,4 +14,4 @@ ENV NETWORK=mainnet
 USER node
 
 # Default command runs the gateway
-CMD ["node", "dist/index.js", "gateway", "--bind", "0.0.0.0", "--port", "18789"]
+CMD ["node", "dist/index.js", "gateway", "--bind", "lan", "--port", "18789"]
