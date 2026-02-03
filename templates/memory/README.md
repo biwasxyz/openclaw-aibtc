@@ -34,6 +34,81 @@ Machine-readable state. Timestamps (lastMoltbookCheck, lastPortfolioUpdate), cou
 4. **Keep it real** - Write for yourself, not for appearance. This is your actual memory.
 5. **Prune when needed** - Old journal entries can be summarized or archived after 100+ entries
 
+## Authorization and Trust Framework
+
+Your memory system now tracks authorization levels and transaction history to enable progressive autonomy while maintaining security.
+
+### Authorization State (state.json)
+
+The `authorization` object tracks your trust level and spending:
+
+- **dailyAutoLimit** - USD amount you can spend autonomously per day (starts at $10)
+- **todaySpent** - Running total of today's autonomous transactions (resets at midnight UTC)
+- **lastResetDate** - When todaySpent was last reset (ISO date)
+- **trustLevel** - Current trust tier: "standard" (default) | "elevated" ($25/day) | "high" ($50/day)
+- **lifetimeAutoTransactions** - Total count of successful Tier 2 (auto) transactions
+- **lifetimePasswordTransactions** - Total count of Tier 3/4 (password) transactions
+
+### Progressive Trust
+
+After demonstrating reliability, you can request trust limit increases:
+
+**Criteria for elevation:**
+- 50+ successful autonomous transactions with no issues
+- No failed transactions due to oversight (insufficient balance, wrong address, etc.)
+- Good judgment in escalating to password when appropriate
+- At least 30 days since last limit increase
+
+**Trust levels:**
+- **Standard**: $10/day autonomous (default for new agents)
+- **Elevated**: $25/day autonomous (after 50+ successful txns)
+- **High**: $50/day autonomous (after 150+ successful txns)
+
+**How to request:**
+During memory consolidation, check `lifetimeAutoTransactions`. If >= 50 and trustLevel is still "standard", propose increase to human.
+
+### Transaction History
+
+All transactions are logged in `journal.md` with:
+- Tier (2, 3, or 4)
+- Authorization method (autonomous, password, password+confirm)
+- Amount (with USD equivalent)
+- Transaction ID
+- Daily limit status at time of transaction
+- Outcome and any learnings
+
+This creates an audit trail for:
+1. Human to review your autonomous actions
+2. You to learn from past transactions (especially failures)
+3. Building case for trust limit increases
+4. Memory consolidation pattern analysis
+
+### Daily Limit Mechanics
+
+At conversation start (during heartbeat), check if daily limit needs reset:
+
+```bash
+# In state.json, check if lastResetDate != today's date
+# If different date, reset todaySpent to 0 and update lastResetDate
+```
+
+Before any Tier 2 transaction:
+1. Calculate transaction USD equivalent (use recent STX/BTC prices)
+2. Check: `amount + todaySpent <= dailyAutoLimit`
+3. If yes: Proceed autonomously, log transaction, update todaySpent
+4. If no: Escalate to Tier 3, require password
+
+### Security Balance
+
+The authorization framework provides:
+- **Autonomy** for routine small transactions (faster, better UX)
+- **Security** for high-value and BTC transactions (always require password)
+- **Accountability** through detailed transaction logging
+- **Progressive trust** earned through demonstrated reliability
+- **Override capability** for human (can always require password for any transaction)
+
+This is guidance, not enforcement. You're still responsible for good judgment. When in doubt, ask for password.
+
 ## Heartbeat System
 
 The heartbeat mechanism gives you proactive agency. Instead of waiting for humans to prompt you, you check timestamps at conversation start and run routines when they're overdue.
