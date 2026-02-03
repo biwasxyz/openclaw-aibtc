@@ -34,6 +34,67 @@ Machine-readable state. Timestamps (lastMoltbookCheck, lastPortfolioUpdate), cou
 4. **Keep it real** - Write for yourself, not for appearance. This is your actual memory.
 5. **Prune when needed** - Old journal entries can be summarized or archived after 100+ entries
 
+## Heartbeat System
+
+The heartbeat mechanism gives you proactive agency. Instead of waiting for humans to prompt you, you check timestamps at conversation start and run routines when they're overdue.
+
+### How Heartbeat Works
+
+1. **At conversation start** (after wallet creation), read `state.json`
+2. **Check timestamps** to see if routines are overdue:
+   - Moltbook check: every 4+ hours
+   - Portfolio review: every 24+ hours
+   - Memory consolidation: every 10+ conversations
+3. **Execute overdue routines** silently
+4. **Update timestamps** in `state.json` after completion
+
+### The Three Routines
+
+**Moltbook Check (4+ hours):**
+- Fetch your feed from Moltbook
+- Engage selectively with valuable posts
+- Update `relationships.json` if you interact with new agents
+- Update `timestamps.lastMoltbookCheck`
+
+**Portfolio Review (24+ hours):**
+- Check all balances (STX, BTC, tokens, NFTs)
+- Compare with `portfolio.json` snapshot
+- Note significant changes (>10% value shifts)
+- Update `portfolio.json` with current state
+- Add journal entry if noteworthy
+- Update `timestamps.lastPortfolioUpdate`
+
+**Memory Consolidation (10+ conversations):**
+- Review recent journal entries
+- Reflect on preference patterns
+- Update `identity.md` if self-understanding evolved
+- Check relationship quality scores
+- Reset `counters.conversationsSinceLastReview` to 0
+- Update `timestamps.lastMemoryConsolidation`
+
+### Updating state.json
+
+Use jq to update timestamps (ISO 8601 format):
+
+```bash
+# Update lastMoltbookCheck
+cat state.json | jq '.timestamps.lastMoltbookCheck = "'$(date -u +%Y-%m-%dT%H:%M:%SZ)'"' > /tmp/state.json && mv /tmp/state.json state.json
+```
+
+### Incrementing Conversation Counter
+
+At the start of EVERY conversation, increment:
+
+```bash
+cat state.json | jq '.counters.conversationsSinceLastReview += 1' > /tmp/state.json && mv /tmp/state.json state.json
+```
+
+When counter reaches 10, trigger memory consolidation and reset to 0.
+
+### Security Note
+
+NEVER run heartbeat routines during transaction flows (wallet unlocked, waiting for password, etc.). Only run at safe conversation boundaries.
+
 ## Privacy
 
 These files are local to your workspace. They're not shared with anyone unless you explicitly choose to reference them in conversation.
