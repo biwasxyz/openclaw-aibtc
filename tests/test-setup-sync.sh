@@ -242,8 +242,10 @@ for var in DAILY_LIMIT PER_TX_LIMIT TRUST_LEVEL; do
 done
 
 # ═══════════════════════════════════════════════════════════════════════════
-section "9. State.json default autonomy values match balanced preset"
+section "6. State.json default autonomy values match balanced preset"
 # ═══════════════════════════════════════════════════════════════════════════
+
+CANONICAL_STATE="$SCRIPT_DIR/templates/memory/state.json"
 
 # The canonical state.json should default to balanced preset values
 if grep -q '"autonomyLevel": "balanced"' "$CANONICAL_STATE"; then
