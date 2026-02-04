@@ -106,11 +106,6 @@ section "1. aibtc SKILL.md sync"
 
 CANONICAL_AIBTC="$SCRIPT_DIR/skills/aibtc/SKILL.md"
 
-# setup.sh uses marker AIBTCSKILLEOF
-extract_heredoc "$SCRIPT_DIR/setup.sh" "AIBTCSKILLEOF" "AIBTCSKILLEOF" \
-  > "$TMPDIR_TESTS/setup_aibtc_skill.md"
-check_key_lines "setup.sh -> aibtc SKILL.md" "$CANONICAL_AIBTC" "$TMPDIR_TESTS/setup_aibtc_skill.md" 15
-
 # local-setup.sh uses marker SKILLEOF
 extract_heredoc "$SCRIPT_DIR/local-setup.sh" "SKILLEOF" "SKILLEOF" \
   > "$TMPDIR_TESTS/local_aibtc_skill.md"
@@ -126,7 +121,7 @@ section "2. Specific critical content checks"
 # ═══════════════════════════════════════════════════════════════════════════
 
 # Check that all 4 tiers are present in all SKILL.md heredocs
-for script in setup.sh local-setup.sh vps-setup.sh; do
+for script in local-setup.sh vps-setup.sh; do
   for tier in "Tier 0" "Tier 1" "Tier 2" "Tier 3"; do
     if grep -q "$tier" "$SCRIPT_DIR/$script"; then
       pass "$script contains '$tier'"
@@ -137,7 +132,7 @@ for script in setup.sh local-setup.sh vps-setup.sh; do
 done
 
 # Check that YAML frontmatter header is present
-for script in setup.sh local-setup.sh vps-setup.sh; do
+for script in local-setup.sh vps-setup.sh; do
   if grep -q "name: aibtc" "$SCRIPT_DIR/$script"; then
     pass "$script contains aibtc frontmatter"
   else
@@ -151,16 +146,7 @@ section "3. moltbook SKILL.md sync"
 
 CANONICAL_MOLTBOOK="$SCRIPT_DIR/skills/moltbook/SKILL.md"
 
-# setup.sh has the full canonical version; local/vps use condensed versions.
-# For setup.sh, do a full key-line comparison against canonical.
-# For local/vps, verify essential content markers that must be in ANY version.
-
-# setup.sh uses marker MOLTBOOKSKILLEOF
-extract_heredoc "$SCRIPT_DIR/setup.sh" "MOLTBOOKSKILLEOF" "MOLTBOOKSKILLEOF" \
-  > "$TMPDIR_TESTS/setup_moltbook_skill.md"
-check_key_lines "setup.sh -> moltbook SKILL.md" "$CANONICAL_MOLTBOOK" "$TMPDIR_TESTS/setup_moltbook_skill.md" 10
-
-# For local/vps, check essential content that must be present in any variant
+# Verify essential content markers that must be present in any variant
 MOLTBOOK_ESSENTIALS=(
   "name: moltbook"
   "https://www.moltbook.com/api/v1"
@@ -190,80 +176,10 @@ for script in local-setup.sh vps-setup.sh; do
 done
 
 # ═══════════════════════════════════════════════════════════════════════════
-section "4. Dockerfile sync (setup.sh only)"
+section "4. Autonomy preset values"
 # ═══════════════════════════════════════════════════════════════════════════
 
-CANONICAL_DOCKERFILE="$SCRIPT_DIR/Dockerfile"
-
-extract_heredoc "$SCRIPT_DIR/setup.sh" "DOCKERFILEEOF" "DOCKERFILEEOF" \
-  > "$TMPDIR_TESTS/setup_dockerfile"
-
-# Check critical Dockerfile directives exist in both
-for directive in "FROM ghcr.io/openclaw/openclaw:latest" \
-                 "npm install -g @aibtc/mcp-server mcporter" \
-                 "ENV NETWORK=mainnet" \
-                 'CMD \["node"'; do
-  if grep -qF "$directive" "$CANONICAL_DOCKERFILE" 2>/dev/null || \
-     grep -qE "$directive" "$CANONICAL_DOCKERFILE" 2>/dev/null; then
-    if grep -qF "$directive" "$TMPDIR_TESTS/setup_dockerfile" 2>/dev/null || \
-       grep -qE "$directive" "$TMPDIR_TESTS/setup_dockerfile" 2>/dev/null; then
-      pass "Dockerfile directive in sync: $(echo "$directive" | head -c 60)"
-    else
-      fail "Dockerfile directive missing from setup.sh heredoc: $directive"
-    fi
-  else
-    info "Directive not in canonical Dockerfile (skipped): $directive"
-  fi
-done
-
-# ═══════════════════════════════════════════════════════════════════════════
-section "5. docker-compose.yml sync (setup.sh only)"
-# ═══════════════════════════════════════════════════════════════════════════
-
-CANONICAL_COMPOSE="$SCRIPT_DIR/docker-compose.yml"
-
-extract_heredoc "$SCRIPT_DIR/setup.sh" "COMPOSEEOF" "COMPOSEEOF" \
-  > "$TMPDIR_TESTS/setup_compose"
-
-# Check critical compose keys
-for key in "openclaw-gateway" "container_name: openclaw-aibtc" \
-           "OPENROUTER_API_KEY" "restart: unless-stopped"; do
-  if grep -qF "$key" "$CANONICAL_COMPOSE"; then
-    if grep -qF "$key" "$TMPDIR_TESTS/setup_compose"; then
-      pass "docker-compose key in sync: $key"
-    else
-      fail "docker-compose key missing from setup.sh heredoc: $key"
-    fi
-  fi
-done
-
-# ═══════════════════════════════════════════════════════════════════════════
-section "6. Memory template sync (setup.sh state.json)"
-# ═══════════════════════════════════════════════════════════════════════════
-
-CANONICAL_STATE="$SCRIPT_DIR/templates/memory/state.json"
-
-extract_heredoc "$SCRIPT_DIR/setup.sh" "STATEJSONEOF" "STATEJSONEOF" \
-  > "$TMPDIR_TESTS/setup_state_json"
-
-# Check critical state.json keys
-for key in '"autonomyLevel"' '"dailyAutoLimit"' '"perTransactionLimit"' \
-           '"todaySpent"' '"trustLevel"' '"lifetimeAutoTransactions"' \
-           '"walletCreated"' '"version"'; do
-  if grep -qF "$key" "$CANONICAL_STATE"; then
-    if grep -qF "$key" "$TMPDIR_TESTS/setup_state_json"; then
-      pass "state.json key in sync: $key"
-    else
-      fail "state.json key missing from setup.sh heredoc: $key"
-    fi
-  fi
-done
-
-# ═══════════════════════════════════════════════════════════════════════════
-section "7. Autonomy preset values"
-# ═══════════════════════════════════════════════════════════════════════════
-
-# Expected values per preset across all 3 setup scripts:
+# Expected values per preset across both setup scripts:
 #   conservative: daily=1.00, per-tx=0.50, trust=restricted
 #   balanced:     daily=10.00, per-tx=5.00, trust=standard
 #   autonomous:   daily=50.00, per-tx=25.00, trust=elevated
@@ -295,42 +211,41 @@ check_preset() {
   fi
 }
 
-for script in setup.sh local-setup.sh vps-setup.sh; do
+for script in local-setup.sh vps-setup.sh; do
   check_preset "$script" "conservative" "1.00" "0.50" "restricted"
   check_preset "$script" "balanced"     "10.00" "5.00" "standard"
   check_preset "$script" "autonomous"   "50.00" "25.00" "elevated"
 done
 
 # ═══════════════════════════════════════════════════════════════════════════
-section "8. Cross-script autonomy preset consistency"
+section "5. Cross-script autonomy preset consistency"
 # ═══════════════════════════════════════════════════════════════════════════
 
-# Verify all three scripts define the same set of presets by extracting the
+# Verify both scripts define the same set of presets by extracting the
 # case blocks and comparing the variable assignments.
 
 for var in DAILY_LIMIT PER_TX_LIMIT TRUST_LEVEL; do
-  setup_vals=$(grep "${var}=" "$SCRIPT_DIR/setup.sh" | sort)
   local_vals=$(grep "${var}=" "$SCRIPT_DIR/local-setup.sh" | sort)
   vps_vals=$(grep "${var}=" "$SCRIPT_DIR/vps-setup.sh" | sort)
 
   # Normalize whitespace for comparison
-  setup_norm=$(echo "$setup_vals" | sed 's/[[:space:]]//g')
   local_norm=$(echo "$local_vals" | sed 's/[[:space:]]//g')
   vps_norm=$(echo "$vps_vals" | sed 's/[[:space:]]//g')
 
-  if [ "$setup_norm" = "$local_norm" ] && [ "$setup_norm" = "$vps_norm" ]; then
-    pass "$var values identical across all 3 setup scripts"
+  if [ "$local_norm" = "$vps_norm" ]; then
+    pass "$var values identical across local-setup.sh and vps-setup.sh"
   else
     fail "$var values differ between setup scripts"
-    info "  setup.sh:       $(echo "$setup_vals" | tr '\n' ' ')"
     info "  local-setup.sh: $(echo "$local_vals" | tr '\n' ' ')"
     info "  vps-setup.sh:   $(echo "$vps_vals" | tr '\n' ' ')"
   fi
 done
 
 # ═══════════════════════════════════════════════════════════════════════════
-section "9. State.json default autonomy values match balanced preset"
+section "6. State.json default autonomy values match balanced preset"
 # ═══════════════════════════════════════════════════════════════════════════
+
+CANONICAL_STATE="$SCRIPT_DIR/templates/memory/state.json"
 
 # The canonical state.json should default to balanced preset values
 if grep -q '"autonomyLevel": "balanced"' "$CANONICAL_STATE"; then

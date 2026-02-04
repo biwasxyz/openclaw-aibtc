@@ -30,8 +30,8 @@ curl -sSL aibtc.com | sh
 git clone https://github.com/aibtcdev/openclaw-aibtc.git
 cd openclaw-aibtc
 
-# Run setup
-./setup.sh
+# Run setup (local machine / Docker Desktop)
+./local-setup.sh
 ```
 
 ## Deploy to VPS
@@ -84,7 +84,7 @@ systemctl start docker
 # Clone and setup
 git clone https://github.com/aibtcdev/openclaw-aibtc.git
 cd openclaw-aibtc
-./setup.sh
+./vps-setup.sh
 ```
 
 #### Step 5: Keep it running
@@ -112,7 +112,7 @@ su - openclaw
 cd /home/openclaw
 git clone https://github.com/aibtcdev/openclaw-aibtc.git
 cd openclaw-aibtc
-./setup.sh
+./vps-setup.sh
 ```
 
 ## Requirements
@@ -303,7 +303,10 @@ docker compose up -d
 ```bash
 docker compose down -v
 rm -rf data/
-./setup.sh
+# Local / Docker Desktop:
+./local-setup.sh
+# VPS / cloud server:
+./vps-setup.sh
 ```
 
 ## License
