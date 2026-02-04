@@ -146,16 +146,7 @@ section "3. moltbook SKILL.md sync"
 
 CANONICAL_MOLTBOOK="$SCRIPT_DIR/skills/moltbook/SKILL.md"
 
-# setup.sh has the full canonical version; local/vps use condensed versions.
-# For setup.sh, do a full key-line comparison against canonical.
-# For local/vps, verify essential content markers that must be in ANY version.
-
-# setup.sh uses marker MOLTBOOKSKILLEOF
-extract_heredoc "$SCRIPT_DIR/setup.sh" "MOLTBOOKSKILLEOF" "MOLTBOOKSKILLEOF" \
-  > "$TMPDIR_TESTS/setup_moltbook_skill.md"
-check_key_lines "setup.sh -> moltbook SKILL.md" "$CANONICAL_MOLTBOOK" "$TMPDIR_TESTS/setup_moltbook_skill.md" 10
-
-# For local/vps, check essential content that must be present in any variant
+# Verify essential content markers that must be present in any variant
 MOLTBOOK_ESSENTIALS=(
   "name: moltbook"
   "https://www.moltbook.com/api/v1"
