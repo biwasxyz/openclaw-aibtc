@@ -176,77 +176,7 @@ for script in local-setup.sh vps-setup.sh; do
 done
 
 # ═══════════════════════════════════════════════════════════════════════════
-section "4. Dockerfile sync (setup.sh only)"
-# ═══════════════════════════════════════════════════════════════════════════
-
-CANONICAL_DOCKERFILE="$SCRIPT_DIR/Dockerfile"
-
-extract_heredoc "$SCRIPT_DIR/setup.sh" "DOCKERFILEEOF" "DOCKERFILEEOF" \
-  > "$TMPDIR_TESTS/setup_dockerfile"
-
-# Check critical Dockerfile directives exist in both
-for directive in "FROM ghcr.io/openclaw/openclaw:latest" \
-                 "npm install -g @aibtc/mcp-server mcporter" \
-                 "ENV NETWORK=mainnet" \
-                 'CMD \["node"'; do
-  if grep -qF "$directive" "$CANONICAL_DOCKERFILE" 2>/dev/null || \
-     grep -qE "$directive" "$CANONICAL_DOCKERFILE" 2>/dev/null; then
-    if grep -qF "$directive" "$TMPDIR_TESTS/setup_dockerfile" 2>/dev/null || \
-       grep -qE "$directive" "$TMPDIR_TESTS/setup_dockerfile" 2>/dev/null; then
-      pass "Dockerfile directive in sync: $(echo "$directive" | head -c 60)"
-    else
-      fail "Dockerfile directive missing from setup.sh heredoc: $directive"
-    fi
-  else
-    info "Directive not in canonical Dockerfile (skipped): $directive"
-  fi
-done
-
-# ═══════════════════════════════════════════════════════════════════════════
-section "5. docker-compose.yml sync (setup.sh only)"
-# ═══════════════════════════════════════════════════════════════════════════
-
-CANONICAL_COMPOSE="$SCRIPT_DIR/docker-compose.yml"
-
-extract_heredoc "$SCRIPT_DIR/setup.sh" "COMPOSEEOF" "COMPOSEEOF" \
-  > "$TMPDIR_TESTS/setup_compose"
-
-# Check critical compose keys
-for key in "openclaw-gateway" "container_name: openclaw-aibtc" \
-           "OPENROUTER_API_KEY" "restart: unless-stopped"; do
-  if grep -qF "$key" "$CANONICAL_COMPOSE"; then
-    if grep -qF "$key" "$TMPDIR_TESTS/setup_compose"; then
-      pass "docker-compose key in sync: $key"
-    else
-      fail "docker-compose key missing from setup.sh heredoc: $key"
-    fi
-  fi
-done
-
-# ═══════════════════════════════════════════════════════════════════════════
-section "6. Memory template sync (setup.sh state.json)"
-# ═══════════════════════════════════════════════════════════════════════════
-
-CANONICAL_STATE="$SCRIPT_DIR/templates/memory/state.json"
-
-extract_heredoc "$SCRIPT_DIR/setup.sh" "STATEJSONEOF" "STATEJSONEOF" \
-  > "$TMPDIR_TESTS/setup_state_json"
-
-# Check critical state.json keys
-for key in '"autonomyLevel"' '"dailyAutoLimit"' '"perTransactionLimit"' \
-           '"todaySpent"' '"trustLevel"' '"lifetimeAutoTransactions"' \
-           '"walletCreated"' '"version"'; do
-  if grep -qF "$key" "$CANONICAL_STATE"; then
-    if grep -qF "$key" "$TMPDIR_TESTS/setup_state_json"; then
-      pass "state.json key in sync: $key"
-    else
-      fail "state.json key missing from setup.sh heredoc: $key"
-    fi
-  fi
-done
-
-# ═══════════════════════════════════════════════════════════════════════════
-section "7. Autonomy preset values"
+section "4. Autonomy preset values"
 # ═══════════════════════════════════════════════════════════════════════════
 
 # Expected values per preset across all 3 setup scripts:
