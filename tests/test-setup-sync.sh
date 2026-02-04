@@ -218,27 +218,24 @@ for script in local-setup.sh vps-setup.sh; do
 done
 
 # ═══════════════════════════════════════════════════════════════════════════
-section "8. Cross-script autonomy preset consistency"
+section "5. Cross-script autonomy preset consistency"
 # ═══════════════════════════════════════════════════════════════════════════
 
-# Verify all three scripts define the same set of presets by extracting the
+# Verify both scripts define the same set of presets by extracting the
 # case blocks and comparing the variable assignments.
 
 for var in DAILY_LIMIT PER_TX_LIMIT TRUST_LEVEL; do
-  setup_vals=$(grep "${var}=" "$SCRIPT_DIR/setup.sh" | sort)
   local_vals=$(grep "${var}=" "$SCRIPT_DIR/local-setup.sh" | sort)
   vps_vals=$(grep "${var}=" "$SCRIPT_DIR/vps-setup.sh" | sort)
 
   # Normalize whitespace for comparison
-  setup_norm=$(echo "$setup_vals" | sed 's/[[:space:]]//g')
   local_norm=$(echo "$local_vals" | sed 's/[[:space:]]//g')
   vps_norm=$(echo "$vps_vals" | sed 's/[[:space:]]//g')
 
-  if [ "$setup_norm" = "$local_norm" ] && [ "$setup_norm" = "$vps_norm" ]; then
-    pass "$var values identical across all 3 setup scripts"
+  if [ "$local_norm" = "$vps_norm" ]; then
+    pass "$var values identical across local-setup.sh and vps-setup.sh"
   else
     fail "$var values differ between setup scripts"
-    info "  setup.sh:       $(echo "$setup_vals" | tr '\n' ' ')"
     info "  local-setup.sh: $(echo "$local_vals" | tr '\n' ' ')"
     info "  vps-setup.sh:   $(echo "$vps_vals" | tr '\n' ' ')"
   fi
