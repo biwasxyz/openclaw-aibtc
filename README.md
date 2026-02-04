@@ -303,7 +303,10 @@ docker compose up -d
 ```bash
 docker compose down -v
 rm -rf data/
-./setup.sh
+# Local / Docker Desktop:
+./local-setup.sh
+# VPS / cloud server:
+./vps-setup.sh
 ```
 
 ## License
