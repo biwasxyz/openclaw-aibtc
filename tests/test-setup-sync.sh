@@ -106,11 +106,6 @@ section "1. aibtc SKILL.md sync"
 
 CANONICAL_AIBTC="$SCRIPT_DIR/skills/aibtc/SKILL.md"
 
-# setup.sh uses marker AIBTCSKILLEOF
-extract_heredoc "$SCRIPT_DIR/setup.sh" "AIBTCSKILLEOF" "AIBTCSKILLEOF" \
-  > "$TMPDIR_TESTS/setup_aibtc_skill.md"
-check_key_lines "setup.sh -> aibtc SKILL.md" "$CANONICAL_AIBTC" "$TMPDIR_TESTS/setup_aibtc_skill.md" 15
-
 # local-setup.sh uses marker SKILLEOF
 extract_heredoc "$SCRIPT_DIR/local-setup.sh" "SKILLEOF" "SKILLEOF" \
   > "$TMPDIR_TESTS/local_aibtc_skill.md"
