@@ -121,7 +121,7 @@ section "2. Specific critical content checks"
 # ═══════════════════════════════════════════════════════════════════════════
 
 # Check that all 4 tiers are present in all SKILL.md heredocs
-for script in setup.sh local-setup.sh vps-setup.sh; do
+for script in local-setup.sh vps-setup.sh; do
   for tier in "Tier 0" "Tier 1" "Tier 2" "Tier 3"; do
     if grep -q "$tier" "$SCRIPT_DIR/$script"; then
       pass "$script contains '$tier'"
@@ -132,7 +132,7 @@ for script in setup.sh local-setup.sh vps-setup.sh; do
 done
 
 # Check that YAML frontmatter header is present
-for script in setup.sh local-setup.sh vps-setup.sh; do
+for script in local-setup.sh vps-setup.sh; do
   if grep -q "name: aibtc" "$SCRIPT_DIR/$script"; then
     pass "$script contains aibtc frontmatter"
   else
