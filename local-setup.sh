@@ -64,7 +64,7 @@ start_docker() {
 
     # Wait for Docker to start (up to 60 seconds)
     printf "Waiting for Docker to start"
-    for i in $(seq 1 30); do
+    for _ in $(seq 1 30); do
         if docker info >/dev/null 2>&1; then
             echo ""
             return 0
