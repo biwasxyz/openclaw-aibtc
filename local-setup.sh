@@ -92,7 +92,7 @@ install_docker() {
                     open -a Docker
                     # Wait for first-time setup
                     printf "Docker Desktop is starting (first launch may take a minute)..."
-                    for i in $(seq 1 45); do
+                    for _ in $(seq 1 45); do
                         if docker info >/dev/null 2>&1; then
                             echo ""
                             return 0
