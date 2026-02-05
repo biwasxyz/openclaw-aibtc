@@ -18,23 +18,200 @@ echo "║                                                           ║"
 echo "╚═══════════════════════════════════════════════════════════╝"
 printf "${NC}\n"
 
-# Check for Docker
+# Detect OS
+detect_os() {
+    case "$(uname -s)" in
+        Darwin) echo "macos" ;;
+        Linux)
+            if grep -qi microsoft /proc/version 2>/dev/null; then
+                echo "wsl"
+            else
+                echo "linux"
+            fi
+            ;;
+        MINGW*|MSYS*|CYGWIN*) echo "windows" ;;
+        *) echo "unknown" ;;
+    esac
+}
+
+# Open URL in browser (cross-platform)
+open_url() {
+    case "$(detect_os)" in
+        macos) open "$1" ;;
+        wsl) cmd.exe /c start "$1" 2>/dev/null || powershell.exe Start-Process "$1" 2>/dev/null ;;
+        linux) xdg-open "$1" 2>/dev/null || sensible-browser "$1" 2>/dev/null || echo "Open in browser: $1" ;;
+        windows) start "$1" 2>/dev/null || echo "Open in browser: $1" ;;
+        *) echo "Open in browser: $1" ;;
+    esac
+}
+
+# Try to start Docker Desktop
+start_docker() {
+    printf "${YELLOW}Attempting to start Docker Desktop...${NC}\n"
+    case "$(detect_os)" in
+        macos)
+            open -a Docker 2>/dev/null
+            ;;
+        wsl|windows)
+            # Try common Windows paths
+            "/mnt/c/Program Files/Docker/Docker/Docker Desktop.exe" 2>/dev/null &
+            ;;
+        linux)
+            systemctl --user start docker-desktop 2>/dev/null || \
+            /opt/docker-desktop/bin/docker-desktop 2>/dev/null &
+            ;;
+    esac
+
+    # Wait for Docker to start (up to 60 seconds)
+    printf "Waiting for Docker to start"
+    for i in $(seq 1 30); do
+        if docker info >/dev/null 2>&1; then
+            echo ""
+            return 0
+        fi
+        printf "."
+        sleep 2
+    done
+    echo ""
+    return 1
+}
+
+# Install Docker Desktop
+install_docker() {
+    OS=$(detect_os)
+    printf "${YELLOW}Docker Desktop not found. Installing...${NC}\n"
+
+    case "$OS" in
+        macos)
+            # Try Homebrew first
+            if command -v brew >/dev/null 2>&1; then
+                printf "${BLUE}Installing via Homebrew...${NC}\n"
+                if brew install --cask docker; then
+                    printf "${GREEN}✓ Docker Desktop installed via Homebrew${NC}\n"
+                    printf "${YELLOW}Opening Docker Desktop...${NC}\n"
+                    open -a Docker
+                    # Wait for first-time setup
+                    printf "Docker Desktop is starting (first launch may take a minute)..."
+                    for i in $(seq 1 45); do
+                        if docker info >/dev/null 2>&1; then
+                            echo ""
+                            return 0
+                        fi
+                        printf "."
+                        sleep 2
+                    done
+                    echo ""
+                fi
+            fi
+
+            # Fallback: open download page
+            printf "${YELLOW}Opening Docker Desktop download page...${NC}\n"
+            open_url "https://www.docker.com/products/docker-desktop/"
+            echo ""
+            echo "Please download and install Docker Desktop for Mac."
+            echo "After installation, open Docker Desktop and wait for it to start."
+            printf "Press Enter when Docker Desktop is running..."
+            read REPLY < /dev/tty
+            ;;
+
+        wsl)
+            # Check for winget
+            if command -v winget.exe >/dev/null 2>&1; then
+                printf "${BLUE}Installing via winget...${NC}\n"
+                if winget.exe install -e --id Docker.DockerDesktop --accept-source-agreements --accept-package-agreements; then
+                    printf "${GREEN}✓ Docker Desktop installed via winget${NC}\n"
+                    printf "${YELLOW}Please start Docker Desktop from the Start menu.${NC}\n"
+                    printf "Press Enter when Docker Desktop is running..."
+                    read REPLY < /dev/tty
+                    return 0
+                fi
+            fi
+
+            # Fallback: open download page
+            printf "${YELLOW}Opening Docker Desktop download page...${NC}\n"
+            open_url "https://www.docker.com/products/docker-desktop/"
+            echo ""
+            echo "Please download and install Docker Desktop for Windows."
+            echo "After installation:"
+            echo "  1. Open Docker Desktop from the Start menu"
+            echo "  2. Enable WSL 2 integration in Settings > Resources > WSL Integration"
+            printf "Press Enter when Docker Desktop is running..."
+            read REPLY < /dev/tty
+            ;;
+
+        linux)
+            # Try apt for Debian/Ubuntu
+            if command -v apt >/dev/null 2>&1; then
+                printf "${BLUE}Installing Docker Desktop via apt...${NC}\n"
+                # Download latest Docker Desktop .deb
+                ARCH=$(dpkg --print-architecture)
+                DEB_URL="https://desktop.docker.com/linux/main/${ARCH}/docker-desktop-amd64.deb"
+
+                if curl -fsSL "$DEB_URL" -o /tmp/docker-desktop.deb 2>/dev/null; then
+                    sudo apt update && sudo apt install -y /tmp/docker-desktop.deb
+                    rm -f /tmp/docker-desktop.deb
+                    printf "${GREEN}✓ Docker Desktop installed${NC}\n"
+                    systemctl --user start docker-desktop 2>/dev/null || true
+                    printf "Press Enter when Docker Desktop is running..."
+                    read REPLY < /dev/tty
+                    return 0
+                fi
+            fi
+
+            # Fallback: open download page
+            printf "${YELLOW}Opening Docker Desktop download page...${NC}\n"
+            open_url "https://docs.docker.com/desktop/install/linux/"
+            echo ""
+            echo "Please download and install Docker Desktop for your Linux distribution."
+            printf "Press Enter when Docker Desktop is running..."
+            read REPLY < /dev/tty
+            ;;
+
+        *)
+            printf "${YELLOW}Opening Docker Desktop download page...${NC}\n"
+            open_url "https://www.docker.com/products/docker-desktop/"
+            echo ""
+            echo "Please download and install Docker Desktop for your system."
+            printf "Press Enter when Docker Desktop is running..."
+            read REPLY < /dev/tty
+            ;;
+    esac
+}
+
+# Check for Docker - install if missing
 if ! command -v docker >/dev/null 2>&1; then
-    printf "${RED}Error: Docker is not installed.${NC}\n"
-    echo "Please install Docker Desktop: https://docs.docker.com/get-docker/"
-    exit 1
+    install_docker
+
+    # Verify installation worked
+    if ! command -v docker >/dev/null 2>&1; then
+        printf "${RED}Error: Docker still not found after installation.${NC}\n"
+        echo "Please install Docker Desktop manually: https://docker.com/products/docker-desktop"
+        exit 1
+    fi
 fi
 
+# Check if Docker is running - try to start it if not
 if ! docker info >/dev/null 2>&1; then
-    printf "${RED}Error: Docker is not running.${NC}\n"
-    echo "Please start Docker Desktop."
-    exit 1
+    if ! start_docker; then
+        printf "${YELLOW}Could not auto-start Docker Desktop.${NC}\n"
+        echo "Please start Docker Desktop manually."
+        printf "Press Enter when Docker Desktop is running..."
+        read REPLY < /dev/tty
+
+        # Final check
+        if ! docker info >/dev/null 2>&1; then
+            printf "${RED}Error: Docker is still not running.${NC}\n"
+            exit 1
+        fi
+    fi
 fi
 
 printf "${GREEN}✓ Docker is running${NC}\n"
 
 if ! docker compose version >/dev/null 2>&1; then
     printf "${RED}Error: Docker Compose is not available.${NC}\n"
+    echo "Docker Compose should be included with Docker Desktop."
+    echo "Please reinstall Docker Desktop: https://docker.com/products/docker-desktop"
     exit 1
 fi
 
