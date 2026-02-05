@@ -18,6 +18,16 @@ echo "║                                                           ║"
 echo "╚═══════════════════════════════════════════════════════════╝"
 printf "${NC}\n"
 
+# Safe read from terminal (handles non-interactive environments)
+safe_read() {
+    if [ -t 0 ]; then
+        read REPLY < /dev/tty
+    else
+        # Non-interactive: return empty (caller should handle)
+        REPLY=""
+    fi
+}
+
 # Detect OS
 detect_os() {
     case "$(uname -s)" in
@@ -38,7 +48,7 @@ detect_os() {
 open_url() {
     case "$(detect_os)" in
         macos) open "$1" ;;
-        wsl) cmd.exe /c start "$1" 2>/dev/null || powershell.exe Start-Process "$1" 2>/dev/null ;;
+        wsl) cmd.exe /c start "" "$1" 2>/dev/null || powershell.exe Start-Process "$1" 2>/dev/null ;;
         linux) xdg-open "$1" 2>/dev/null || sensible-browser "$1" 2>/dev/null || echo "Open in browser: $1" ;;
         windows) start "$1" 2>/dev/null || echo "Open in browser: $1" ;;
         *) echo "Open in browser: $1" ;;
@@ -111,18 +121,19 @@ install_docker() {
             echo "Please download and install Docker Desktop for Mac."
             echo "After installation, open Docker Desktop and wait for it to start."
             printf "Press Enter when Docker Desktop is running..."
-            read REPLY < /dev/tty
+            safe_read
             ;;
 
         wsl)
             # Check for winget
             if command -v winget.exe >/dev/null 2>&1; then
                 printf "${BLUE}Installing via winget...${NC}\n"
-                if winget.exe install -e --id Docker.DockerDesktop --accept-source-agreements --accept-package-agreements; then
+                # Use subshell to prevent set -e from exiting on winget failure
+                if (winget.exe install -e --id Docker.DockerDesktop --accept-source-agreements --accept-package-agreements); then
                     printf "${GREEN}✓ Docker Desktop installed via winget${NC}\n"
                     printf "${YELLOW}Please start Docker Desktop from the Start menu.${NC}\n"
                     printf "Press Enter when Docker Desktop is running..."
-                    read REPLY < /dev/tty
+                    safe_read
                     return 0
                 fi
             fi
@@ -136,25 +147,28 @@ install_docker() {
             echo "  1. Open Docker Desktop from the Start menu"
             echo "  2. Enable WSL 2 integration in Settings > Resources > WSL Integration"
             printf "Press Enter when Docker Desktop is running..."
-            read REPLY < /dev/tty
+            safe_read
             ;;
 
         linux)
             # Try apt for Debian/Ubuntu
-            if command -v apt >/dev/null 2>&1; then
+            if command -v apt >/dev/null 2>&1 && command -v dpkg >/dev/null 2>&1; then
                 printf "${BLUE}Installing Docker Desktop via apt...${NC}\n"
                 # Download latest Docker Desktop .deb
                 ARCH=$(dpkg --print-architecture)
-                DEB_URL="https://desktop.docker.com/linux/main/${ARCH}/docker-desktop-amd64.deb"
+                DEB_URL="https://desktop.docker.com/linux/main/${ARCH}/docker-desktop-${ARCH}.deb"
 
                 if curl -fsSL "$DEB_URL" -o /tmp/docker-desktop.deb 2>/dev/null; then
-                    sudo apt update && sudo apt install -y /tmp/docker-desktop.deb
+                    # Use subshell to prevent set -e from exiting on apt failure
+                    if (sudo apt update && sudo apt install -y /tmp/docker-desktop.deb); then
+                        rm -f /tmp/docker-desktop.deb
+                        printf "${GREEN}✓ Docker Desktop installed${NC}\n"
+                        systemctl --user start docker-desktop 2>/dev/null || true
+                        printf "Press Enter when Docker Desktop is running..."
+                        safe_read
+                        return 0
+                    fi
                     rm -f /tmp/docker-desktop.deb
-                    printf "${GREEN}✓ Docker Desktop installed${NC}\n"
-                    systemctl --user start docker-desktop 2>/dev/null || true
-                    printf "Press Enter when Docker Desktop is running..."
-                    read REPLY < /dev/tty
-                    return 0
                 fi
             fi
 
@@ -164,7 +178,7 @@ install_docker() {
             echo ""
             echo "Please download and install Docker Desktop for your Linux distribution."
             printf "Press Enter when Docker Desktop is running..."
-            read REPLY < /dev/tty
+            safe_read
             ;;
 
         *)
@@ -173,7 +187,7 @@ install_docker() {
             echo ""
             echo "Please download and install Docker Desktop for your system."
             printf "Press Enter when Docker Desktop is running..."
-            read REPLY < /dev/tty
+            safe_read
             ;;
     esac
 }
@@ -185,7 +199,7 @@ if ! command -v docker >/dev/null 2>&1; then
     # Verify installation worked
     if ! command -v docker >/dev/null 2>&1; then
         printf "${RED}Error: Docker still not found after installation.${NC}\n"
-        echo "Please install Docker Desktop manually: https://docker.com/products/docker-desktop"
+        echo "Please install Docker Desktop manually: https://www.docker.com/products/docker-desktop/"
         exit 1
     fi
 fi
@@ -196,7 +210,7 @@ if ! docker info >/dev/null 2>&1; then
         printf "${YELLOW}Could not auto-start Docker Desktop.${NC}\n"
         echo "Please start Docker Desktop manually."
         printf "Press Enter when Docker Desktop is running..."
-        read REPLY < /dev/tty
+        safe_read
 
         # Final check
         if ! docker info >/dev/null 2>&1; then
@@ -211,7 +225,7 @@ printf "${GREEN}✓ Docker is running${NC}\n"
 if ! docker compose version >/dev/null 2>&1; then
     printf "${RED}Error: Docker Compose is not available.${NC}\n"
     echo "Docker Compose should be included with Docker Desktop."
-    echo "Please reinstall Docker Desktop: https://docker.com/products/docker-desktop"
+    echo "Please reinstall Docker Desktop: https://www.docker.com/products/docker-desktop/"
     exit 1
 fi
 
