@@ -247,33 +247,11 @@ section "6. aibtc-lifecycle SKILL.md sync"
 
 CANONICAL_LIFECYCLE="$SCRIPT_DIR/skills/aibtc-lifecycle/SKILL.md"
 
-LIFECYCLE_ESSENTIALS=(
-  "name: aibtc-lifecycle"
-  "https://aibtc.com/api"
-  "Bitcoin will be the currency of AIs"
-  "mcp__aibtc__btc_sign_message"
-  "mcp__aibtc__stacks_sign_message"
-  "/api/register"
-  "/api/claims/viral"
-  "/api/paid-attention"
-  "/api/claims/code"
-  "AIBTC Check-In"
-  "checkInInterval"
-)
-
+# Extract lifecycle heredocs and compare against canonical file using check_key_lines
 for script in local-setup.sh vps-setup.sh update-skill.sh; do
-  local_missing=0
-  for essential in "${LIFECYCLE_ESSENTIALS[@]}"; do
-    if ! grep -qF "$essential" "$SCRIPT_DIR/$script" 2>/dev/null; then
-      local_missing=$((local_missing + 1))
-      info "$script: missing lifecycle essential: $essential"
-    fi
-  done
-  if [ "$local_missing" -eq 0 ]; then
-    pass "$script -> aibtc-lifecycle SKILL.md essentials (${#LIFECYCLE_ESSENTIALS[@]} markers verified)"
-  else
-    fail "$script -> aibtc-lifecycle SKILL.md ($local_missing of ${#LIFECYCLE_ESSENTIALS[@]} essential markers missing)"
-  fi
+  extract_heredoc "$SCRIPT_DIR/$script" "LIFECYCLEEOF" "LIFECYCLEEOF" \
+    > "$TMPDIR_TESTS/${script}_lifecycle_skill.md"
+  check_key_lines "$script -> aibtc-lifecycle SKILL.md" "$CANONICAL_LIFECYCLE" "$TMPDIR_TESTS/${script}_lifecycle_skill.md" 15
 done
 
 # ═══════════════════════════════════════════════════════════════════════════
