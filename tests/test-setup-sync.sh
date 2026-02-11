@@ -242,7 +242,61 @@ for var in DAILY_LIMIT PER_TX_LIMIT TRUST_LEVEL; do
 done
 
 # ═══════════════════════════════════════════════════════════════════════════
-section "6. State.json default autonomy values match balanced preset"
+section "6. aibtc-lifecycle SKILL.md sync"
+# ═══════════════════════════════════════════════════════════════════════════
+
+CANONICAL_LIFECYCLE="$SCRIPT_DIR/skills/aibtc-lifecycle/SKILL.md"
+
+# Extract lifecycle heredocs and compare against canonical file using check_key_lines
+for script in local-setup.sh vps-setup.sh update-skill.sh; do
+  extract_heredoc "$SCRIPT_DIR/$script" "LIFECYCLEEOF" "LIFECYCLEEOF" \
+    > "$TMPDIR_TESTS/${script}_lifecycle_skill.md"
+  check_key_lines "$script -> aibtc-lifecycle SKILL.md" "$CANONICAL_LIFECYCLE" "$TMPDIR_TESTS/${script}_lifecycle_skill.md" 15
+done
+
+# ═══════════════════════════════════════════════════════════════════════════
+section "7. State.json aibtc lifecycle fields"
+# ═══════════════════════════════════════════════════════════════════════════
+
+# Verify canonical state.json has aibtc block with key fields
+CANONICAL_STATE="$SCRIPT_DIR/templates/memory/state.json"
+
+if grep -q '"aibtc"' "$CANONICAL_STATE"; then
+  pass "state.json has aibtc lifecycle block"
+else
+  fail "state.json missing aibtc lifecycle block"
+fi
+
+if grep -q '"checkInInterval": 3600' "$CANONICAL_STATE"; then
+  pass "state.json checkInInterval defaults to 3600 (1 hour)"
+else
+  fail "state.json checkInInterval does not default to 3600"
+fi
+
+# Verify no duplicate state fields exist
+if grep -q '"aibtcRegistered"' "$CANONICAL_STATE"; then
+  fail "state.json has deprecated flags.aibtcRegistered (use aibtc.registered)"
+else
+  pass "state.json has no deprecated flags.aibtcRegistered"
+fi
+
+if grep -q '"lastAibtcCheckIn"' "$CANONICAL_STATE"; then
+  fail "state.json has deprecated timestamps.lastAibtcCheckIn (use aibtc.lastCheckIn)"
+else
+  pass "state.json has no deprecated timestamps.lastAibtcCheckIn"
+fi
+
+# Verify setup scripts include aibtc block in state.json heredocs
+for script in local-setup.sh vps-setup.sh; do
+  if grep -q '"checkInInterval": 3600' "$SCRIPT_DIR/$script"; then
+    pass "$script state.json heredoc includes aibtc lifecycle fields"
+  else
+    fail "$script state.json heredoc missing aibtc lifecycle fields"
+  fi
+done
+
+# ═══════════════════════════════════════════════════════════════════════════
+section "8. State.json default autonomy values match balanced preset"
 # ═══════════════════════════════════════════════════════════════════════════
 
 CANONICAL_STATE="$SCRIPT_DIR/templates/memory/state.json"

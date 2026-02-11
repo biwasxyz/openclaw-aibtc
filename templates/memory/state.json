@@ -29,6 +29,22 @@
     "moltbookRegistered": false,
     "firstTransactionComplete": false
   },
+  "aibtc": {
+    "registered": false,
+    "level": 0,
+    "levelName": "Unregistered",
+    "claimCode": null,
+    "btcAddress": null,
+    "stxAddress": null,
+    "displayName": null,
+    "registeredAt": null,
+    "claimedAt": null,
+    "tweetUrl": null,
+    "lastCheckIn": null,
+    "totalCheckIns": 0,
+    "totalRewards": 0,
+    "checkInInterval": 3600
+  },
   "version": "1.2.0",
   "notes": "Machine-readable state for tracking activity, authorization levels, and triggering periodic reviews."
 }
