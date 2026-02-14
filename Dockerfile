@@ -7,9 +7,14 @@ FROM ghcr.io/openclaw/openclaw:v2026.2.2
 USER root
 RUN npm install -g @aibtc/mcp-server@1.14.2 mcporter@0.7.3
 
-# Install sudo and grant node user scoped privileges
-# Agent can install packages but cannot get a root shell
-RUN apt-get update && apt-get install -y --no-install-recommends sudo \
+# Install sudo, git, and GitHub CLI; grant node user scoped privileges
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends sudo git curl gpg \
+    && curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
+       | gpg --dearmor -o /usr/share/keyrings/githubcli-archive-keyring.gpg \
+    && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" \
+       > /etc/apt/sources.list.d/github-cli.list \
+    && apt-get update && apt-get install -y --no-install-recommends gh \
     && rm -rf /var/lib/apt/lists/* \
     && echo "node ALL=(root) NOPASSWD: /usr/bin/apt-get, /usr/bin/apt, /usr/local/bin/npm, /usr/bin/npx" > /etc/sudoers.d/node-agent \
     && chmod 0440 /etc/sudoers.d/node-agent
