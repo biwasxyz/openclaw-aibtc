@@ -1519,6 +1519,63 @@ else
     printf "${BLUE}No existing state.json found, skipping migration (setup will create it).${NC}\n"
 fi
 
+# Migrate openclaw.json: enable block streaming and disable draft streaming
+OPENCLAW_CONFIG="$INSTALL_DIR/data/openclaw.json"
+if [ -f "$OPENCLAW_CONFIG" ]; then
+    CONFIG_CHANGED=false
+
+    # Fix streamMode: partial -> off (draft streaming doesn't work in regular DMs)
+    if grep -q '"streamMode": "partial"' "$OPENCLAW_CONFIG" 2>/dev/null; then
+        printf "${BLUE}Fixing streamMode: partial -> off (draft streaming only works with Topics)...${NC}\n"
+        sed -i 's/"streamMode": "partial"/"streamMode": "off"/' "$OPENCLAW_CONFIG"
+        CONFIG_CHANGED=true
+    fi
+
+    # Add block streaming config if missing
+    if ! grep -q '"blockStreamingDefault"' "$OPENCLAW_CONFIG" 2>/dev/null; then
+        printf "${BLUE}Adding block streaming config for progressive Telegram messages...${NC}\n"
+        if command -v python3 >/dev/null 2>&1; then
+            python3 -c "
+import json, sys
+try:
+    with open('$OPENCLAW_CONFIG', 'r') as f:
+        config = json.load(f)
+    defaults = config.setdefault('agents', {}).setdefault('defaults', {})
+    defaults['blockStreamingDefault'] = 'on'
+    defaults['blockStreamingBreak'] = 'text_end'
+    defaults['blockStreamingCoalesce'] = {
+        'minChars': 200,
+        'maxChars': 1500,
+        'idleMs': 1500
+    }
+    with open('$OPENCLAW_CONFIG', 'w') as f:
+        json.dump(config, f, indent=2)
+        f.write('\n')
+    print('Block streaming config added.')
+except Exception as e:
+    print(f'Warning: openclaw.json migration failed: {e}', file=sys.stderr)
+    sys.exit(1)
+"
+            CONFIG_CHANGED=true
+        elif command -v jq >/dev/null 2>&1; then
+            TMP_CONFIG="$OPENCLAW_CONFIG.tmp"
+            jq '.agents.defaults.blockStreamingDefault = "on"
+                | .agents.defaults.blockStreamingBreak = "text_end"
+                | .agents.defaults.blockStreamingCoalesce = {"minChars": 200, "maxChars": 1500, "idleMs": 1500}' \
+                "$OPENCLAW_CONFIG" > "$TMP_CONFIG" && mv "$TMP_CONFIG" "$OPENCLAW_CONFIG"
+            printf "Block streaming config added.\n"
+            CONFIG_CHANGED=true
+        else
+            printf "${BLUE}Warning: Neither python3 nor jq found. Skipping openclaw.json migration.${NC}\n"
+        fi
+    fi
+
+    if [ "$CONFIG_CHANGED" = true ]; then
+        chown 1000:1000 "$OPENCLAW_CONFIG" 2>/dev/null || true
+        printf "${GREEN}✓ openclaw.json updated with block streaming${NC}\n"
+    fi
+fi
+
 # Fix permissions
 chown 1000:1000 "$SKILL_FILE" 2>/dev/null || true
 chown 1000:1000 "$MOLTBOOK_FILE" 2>/dev/null || true
@@ -1533,18 +1590,24 @@ printf "${GREEN}✓ mcporter config updated with keep-alive!${NC}\n"
 
 cd "$INSTALL_DIR"
 
-# Update Dockerfile: add sudo with scoped privileges for the node user
+# Update Dockerfile: ensure sudo, git, and gh CLI are installed
 DOCKERFILE="$INSTALL_DIR/Dockerfile"
 NEEDS_REBUILD=false
 
 if [ -f "$DOCKERFILE" ]; then
-    if ! grep -q 'sudoers.d/node-agent' "$DOCKERFILE" 2>/dev/null; then
-        printf "${BLUE}Updating Dockerfile: adding scoped sudo for package installs...${NC}\n"
+    if ! grep -q 'github-cli' "$DOCKERFILE" 2>/dev/null; then
+        printf "${BLUE}Updating Dockerfile: adding sudo, git, and GitHub CLI...${NC}\n"
         cat > "$DOCKERFILE" << 'EOF'
 FROM ghcr.io/openclaw/openclaw:latest
 USER root
 RUN npm install -g @aibtc/mcp-server mcporter
-RUN apt-get update && apt-get install -y --no-install-recommends sudo \
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends sudo git curl gpg \
+    && curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
+       | gpg --dearmor -o /usr/share/keyrings/githubcli-archive-keyring.gpg \
+    && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" \
+       > /etc/apt/sources.list.d/github-cli.list \
+    && apt-get update && apt-get install -y --no-install-recommends gh \
     && rm -rf /var/lib/apt/lists/* \
     && echo "node ALL=(root) NOPASSWD: /usr/bin/apt-get, /usr/bin/apt, /usr/local/bin/npm, /usr/bin/npx" > /etc/sudoers.d/node-agent \
     && chmod 0440 /etc/sudoers.d/node-agent
@@ -1553,9 +1616,9 @@ USER node
 CMD ["node", "dist/index.js", "gateway", "--bind", "lan", "--port", "18789"]
 EOF
         NEEDS_REBUILD=true
-        printf "${GREEN}✓ Dockerfile updated with scoped sudo${NC}\n"
+        printf "${GREEN}✓ Dockerfile updated with sudo, git, and GitHub CLI${NC}\n"
     else
-        printf "${BLUE}Dockerfile already has scoped sudo, skipping.${NC}\n"
+        printf "${BLUE}Dockerfile already has git and GitHub CLI, skipping.${NC}\n"
     fi
 fi
 
@@ -1576,4 +1639,5 @@ printf "  - Spending limits and daily caps in state.json\n"
 printf "  - Daemon mode for wallet persistence\n"
 printf "  - Moltbook social network integration\n"
 printf "  - Scoped sudo: can install packages (npm/apt) without full root\n"
+printf "  - Git and GitHub CLI (gh) for repo operations\n"
 printf "${BLUE}Note: The daemon will auto-start on first mcporter call.${NC}\n"

@@ -373,7 +373,13 @@ cat > Dockerfile << 'EOF'
 FROM ghcr.io/openclaw/openclaw:latest
 USER root
 RUN npm install -g @aibtc/mcp-server mcporter
-RUN apt-get update && apt-get install -y --no-install-recommends sudo \
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends sudo git curl gpg \
+    && curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
+       | gpg --dearmor -o /usr/share/keyrings/githubcli-archive-keyring.gpg \
+    && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" \
+       > /etc/apt/sources.list.d/github-cli.list \
+    && apt-get update && apt-get install -y --no-install-recommends gh \
     && rm -rf /var/lib/apt/lists/* \
     && echo "node ALL=(root) NOPASSWD: /usr/bin/apt-get, /usr/bin/apt, /usr/local/bin/npm, /usr/bin/npx" > /etc/sudoers.d/node-agent \
     && chmod 0440 /etc/sudoers.d/node-agent
@@ -422,7 +428,14 @@ cat > data/openclaw.json << EOF
         "primary": "openrouter/anthropic/claude-sonnet-4"
       },
       "workspace": "/home/node/.openclaw/workspace",
-      "maxConcurrent": 4
+      "maxConcurrent": 4,
+      "blockStreamingDefault": "on",
+      "blockStreamingBreak": "text_end",
+      "blockStreamingCoalesce": {
+        "minChars": 200,
+        "maxChars": 1500,
+        "idleMs": 1500
+      }
     }
   },
   "commands": {
@@ -435,7 +448,7 @@ cat > data/openclaw.json << EOF
       "botToken": "${TELEGRAM_TOKEN}",
       "allowFrom": ["*"],
       "groupPolicy": "allowlist",
-      "streamMode": "partial"
+      "streamMode": "off"
     }
   },
   "gateway": {
