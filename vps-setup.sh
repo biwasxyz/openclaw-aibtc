@@ -286,7 +286,14 @@ $SUDO tee data/openclaw.json > /dev/null << EOF
         "primary": "openrouter/anthropic/claude-sonnet-4"
       },
       "workspace": "/home/node/.openclaw/workspace",
-      "maxConcurrent": 4
+      "maxConcurrent": 4,
+      "blockStreamingDefault": "on",
+      "blockStreamingBreak": "text_end",
+      "blockStreamingCoalesce": {
+        "minChars": 200,
+        "maxChars": 1500,
+        "idleMs": 1500
+      }
     }
   },
   "commands": {
@@ -299,7 +306,7 @@ $SUDO tee data/openclaw.json > /dev/null << EOF
       "botToken": "${TELEGRAM_TOKEN}",
       "allowFrom": ["*"],
       "groupPolicy": "allowlist",
-      "streamMode": "partial"
+      "streamMode": "off"
     }
   },
   "gateway": {
