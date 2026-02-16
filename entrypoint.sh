@@ -17,9 +17,12 @@ if [ -L /home/node/.aibtc ]; then
     : # Already a symlink, nothing to do
 elif [ -d /home/node/.aibtc ]; then
     # Migrate existing data into the volume, then replace with symlink
-    cp -a /home/node/.aibtc/. /home/node/.openclaw/aibtc-data/ 2>/dev/null || true
-    rm -rf /home/node/.aibtc
-    ln -s /home/node/.openclaw/aibtc-data /home/node/.aibtc
+    if cp -a /home/node/.aibtc/. /home/node/.openclaw/aibtc-data/ 2>/dev/null; then
+        rm -rf /home/node/.aibtc
+        ln -s /home/node/.openclaw/aibtc-data /home/node/.aibtc
+    else
+        echo "Warning: Failed to migrate ~/.aibtc data, skipping symlink" >&2
+    fi
 else
     ln -s /home/node/.openclaw/aibtc-data /home/node/.aibtc
 fi
@@ -29,9 +32,12 @@ mkdir -p /home/node/.config
 if [ -L /home/node/.config/moltbook ]; then
     : # Already a symlink
 elif [ -d /home/node/.config/moltbook ]; then
-    cp -a /home/node/.config/moltbook/. /home/node/.openclaw/moltbook-data/ 2>/dev/null || true
-    rm -rf /home/node/.config/moltbook
-    ln -s /home/node/.openclaw/moltbook-data /home/node/.config/moltbook
+    if cp -a /home/node/.config/moltbook/. /home/node/.openclaw/moltbook-data/ 2>/dev/null; then
+        rm -rf /home/node/.config/moltbook
+        ln -s /home/node/.openclaw/moltbook-data /home/node/.config/moltbook
+    else
+        echo "Warning: Failed to migrate ~/.config/moltbook data, skipping symlink" >&2
+    fi
 else
     ln -s /home/node/.openclaw/moltbook-data /home/node/.config/moltbook
 fi
