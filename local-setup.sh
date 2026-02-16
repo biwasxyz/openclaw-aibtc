@@ -368,11 +368,49 @@ NETWORK=${NETWORK}
 OPENCLAW_GATEWAY_TOKEN=${GATEWAY_TOKEN}
 EOF
 
+# Create entrypoint script for wallet/credential persistence across rebuilds
+cat > entrypoint.sh << 'EOF'
+#!/bin/sh
+set -e
+
+# Persist wallet data and moltbook credentials into the mounted volume
+mkdir -p /home/node/.openclaw/aibtc-data
+mkdir -p /home/node/.openclaw/moltbook-data
+
+# Wallet store (~/.aibtc → volume)
+if [ -L /home/node/.aibtc ]; then
+    :
+elif [ -d /home/node/.aibtc ]; then
+    cp -a /home/node/.aibtc/. /home/node/.openclaw/aibtc-data/ 2>/dev/null || true
+    rm -rf /home/node/.aibtc
+    ln -s /home/node/.openclaw/aibtc-data /home/node/.aibtc
+else
+    ln -s /home/node/.openclaw/aibtc-data /home/node/.aibtc
+fi
+
+# Moltbook credentials (~/.config/moltbook → volume)
+mkdir -p /home/node/.config
+if [ -L /home/node/.config/moltbook ]; then
+    :
+elif [ -d /home/node/.config/moltbook ]; then
+    cp -a /home/node/.config/moltbook/. /home/node/.openclaw/moltbook-data/ 2>/dev/null || true
+    rm -rf /home/node/.config/moltbook
+    ln -s /home/node/.openclaw/moltbook-data /home/node/.config/moltbook
+else
+    ln -s /home/node/.openclaw/moltbook-data /home/node/.config/moltbook
+fi
+
+exec "$@"
+EOF
+chmod +x entrypoint.sh
+
 # Create Dockerfile
 cat > Dockerfile << 'EOF'
 FROM ghcr.io/openclaw/openclaw:latest
 USER root
-RUN npm install -g @aibtc/mcp-server mcporter
+RUN npm install -g @aibtc/mcp-server@latest mcporter@latest \
+    && chown -R node:node /usr/local/lib/node_modules/@aibtc \
+    && chown -R node:node /usr/local/lib/node_modules/mcporter
 RUN apt-get update \
     && apt-get install -y --no-install-recommends sudo git curl gpg \
     && curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
@@ -383,8 +421,11 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/* \
     && echo "node ALL=(root) NOPASSWD: /usr/bin/apt-get, /usr/bin/apt, /usr/local/bin/npm, /usr/bin/npx" > /etc/sudoers.d/node-agent \
     && chmod 0440 /etc/sudoers.d/node-agent
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
 ENV NETWORK=mainnet
 USER node
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 CMD ["node", "dist/index.js", "gateway", "--bind", "lan", "--port", "18789"]
 EOF
 

@@ -1,11 +1,14 @@
 # OpenClaw + aibtc Docker Image
 # Based on official OpenClaw image with aibtc-mcp-server pre-installed
 
-FROM ghcr.io/openclaw/openclaw:v2026.2.2
+FROM ghcr.io/openclaw/openclaw:latest
 
-# Install aibtc-mcp-server and mcporter globally
 USER root
-RUN npm install -g @aibtc/mcp-server@1.14.2 mcporter@0.7.3
+
+# Install latest aibtc-mcp-server and mcporter; allow node user to self-update
+RUN npm install -g @aibtc/mcp-server@latest mcporter@latest \
+    && chown -R node:node /usr/local/lib/node_modules/@aibtc \
+    && chown -R node:node /usr/local/lib/node_modules/mcporter
 
 # Install sudo, git, and GitHub CLI; grant node user scoped privileges
 # hadolint ignore=DL3008,DL4006
@@ -21,11 +24,17 @@ RUN apt-get update \
     && echo "node ALL=(root) NOPASSWD: /usr/bin/apt-get, /usr/bin/apt, /usr/local/bin/npm, /usr/bin/npx" > /etc/sudoers.d/node-agent \
     && chmod 0440 /etc/sudoers.d/node-agent
 
+# Add entrypoint that symlinks wallet/moltbook data into the mounted volume
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
 # Set default network
 ENV NETWORK=mainnet
 
 # Switch back to node user
 USER node
+
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 
 # Default command runs the gateway
 CMD ["node", "dist/index.js", "gateway", "--bind", "lan", "--port", "18789"]
