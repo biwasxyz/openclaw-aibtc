@@ -18,7 +18,7 @@ jobs:
         run: sudo apt-get install -y shellcheck
 
       - name: Run ShellCheck
-        run: shellcheck -S warning local-setup.sh vps-setup.sh update-skill.sh
+        run: shellcheck -S warning local-setup.sh vps-setup.sh update-skill.sh entrypoint.sh
 
   hadolint:
     name: Hadolint Dockerfile Lint
