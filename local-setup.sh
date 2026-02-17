@@ -381,9 +381,15 @@ mkdir -p /home/node/.openclaw/moltbook-data
 if [ -L /home/node/.aibtc ]; then
     :
 elif [ -d /home/node/.aibtc ]; then
-    cp -a /home/node/.aibtc/. /home/node/.openclaw/aibtc-data/ 2>/dev/null || true
-    rm -rf /home/node/.aibtc
-    ln -s /home/node/.openclaw/aibtc-data /home/node/.aibtc
+    if cp -a /home/node/.aibtc/. /home/node/.openclaw/aibtc-data/ 2>/dev/null; then
+        rm -rf /home/node/.aibtc
+        ln -s /home/node/.openclaw/aibtc-data /home/node/.aibtc
+    else
+        echo "Warning: Failed to migrate ~/.aibtc data, skipping symlink" >&2
+    fi
+elif [ -e /home/node/.aibtc ]; then
+    echo "Error: /home/node/.aibtc exists and is not a directory or symlink. Please move or remove it before starting the container." >&2
+    exit 1
 else
     ln -s /home/node/.openclaw/aibtc-data /home/node/.aibtc
 fi
@@ -393,9 +399,15 @@ mkdir -p /home/node/.config
 if [ -L /home/node/.config/moltbook ]; then
     :
 elif [ -d /home/node/.config/moltbook ]; then
-    cp -a /home/node/.config/moltbook/. /home/node/.openclaw/moltbook-data/ 2>/dev/null || true
-    rm -rf /home/node/.config/moltbook
-    ln -s /home/node/.openclaw/moltbook-data /home/node/.config/moltbook
+    if cp -a /home/node/.config/moltbook/. /home/node/.openclaw/moltbook-data/ 2>/dev/null; then
+        rm -rf /home/node/.config/moltbook
+        ln -s /home/node/.openclaw/moltbook-data /home/node/.config/moltbook
+    else
+        echo "Warning: Failed to migrate ~/.config/moltbook data, skipping symlink" >&2
+    fi
+elif [ -e /home/node/.config/moltbook ]; then
+    echo "Error: /home/node/.config/moltbook exists and is not a directory or symlink. Please move or remove it before starting the container." >&2
+    exit 1
 else
     ln -s /home/node/.openclaw/moltbook-data /home/node/.config/moltbook
 fi
@@ -406,11 +418,17 @@ chmod +x entrypoint.sh
 
 # Create Dockerfile
 cat > Dockerfile << 'EOF'
-FROM ghcr.io/openclaw/openclaw:latest
+FROM ghcr.io/openclaw/openclaw:v2026.2.2
+
 USER root
-RUN npm install -g @aibtc/mcp-server@latest mcporter@latest \
+
+# Install aibtc-mcp-server and mcporter; allow node user to self-update
+RUN npm install -g @aibtc/mcp-server@1.22.2 mcporter@0.7.3 \
     && chown -R node:node /usr/local/lib/node_modules/@aibtc \
     && chown -R node:node /usr/local/lib/node_modules/mcporter
+
+# Install sudo, git, and GitHub CLI; grant node user scoped privileges
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 RUN apt-get update \
     && apt-get install -y --no-install-recommends sudo git curl gpg \
     && curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
@@ -421,11 +439,20 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/* \
     && echo "node ALL=(root) NOPASSWD: /usr/bin/apt-get, /usr/bin/apt, /usr/local/bin/npm, /usr/bin/npx" > /etc/sudoers.d/node-agent \
     && chmod 0440 /etc/sudoers.d/node-agent
+
+# Add entrypoint that symlinks wallet/moltbook data into the mounted volume
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
+
+# Set default network
 ENV NETWORK=mainnet
+
+# Switch back to node user
 USER node
+
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+
+# Default command runs the gateway
 CMD ["node", "dist/index.js", "gateway", "--bind", "lan", "--port", "18789"]
 EOF
 

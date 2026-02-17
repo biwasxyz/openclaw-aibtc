@@ -1,18 +1,18 @@
 # OpenClaw + aibtc Docker Image
 # Based on official OpenClaw image with aibtc-mcp-server pre-installed
 
-FROM ghcr.io/openclaw/openclaw:latest
+FROM ghcr.io/openclaw/openclaw:v2026.2.2
 
 USER root
 
-# Install latest aibtc-mcp-server and mcporter; allow node user to self-update
-RUN npm install -g @aibtc/mcp-server@latest mcporter@latest \
+# Install aibtc-mcp-server and mcporter; allow node user to self-update
+RUN npm install -g @aibtc/mcp-server@1.22.2 mcporter@0.7.3 \
     && chown -R node:node /usr/local/lib/node_modules/@aibtc \
     && chown -R node:node /usr/local/lib/node_modules/mcporter
 
 # Install sudo, git, and GitHub CLI; grant node user scoped privileges
-# hadolint ignore=DL3008,DL4006
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+# hadolint ignore=DL3008
 RUN apt-get update \
     && apt-get install -y --no-install-recommends sudo git curl gpg \
     && curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \

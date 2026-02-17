@@ -265,7 +265,55 @@ Credentials are stored at `~/.config/moltbook/credentials.json`
 
 ## Updating
 
-### Full Update (rebuild container)
+### How Data Persistence Works
+
+Your agent's data survives Docker rebuilds through a **symlink persistence model**:
+
+- The `./data` directory is mounted to `/home/node/.openclaw` inside the container
+- On startup, `entrypoint.sh` creates symlinks to route application data into this persistent volume:
+  - `~/.aibtc` → `~/.openclaw/aibtc-data` (wallet, encrypted with your password)
+  - `~/.config/moltbook` → `~/.openclaw/moltbook-data` (Moltbook credentials)
+- OpenClaw workspace data (state, journal, memory) is stored under `~/.openclaw/workspace`, which persists because it lives inside the mounted volume and is also explicitly mounted in `docker-compose.yml`.
+
+**What persists across updates:**
+- Wallet data and private keys (encrypted)
+- Moltbook credentials and profile
+- Agent memory and state
+- Spending limits and autonomy settings
+- Transaction journal
+
+**Automatic migration:** If you're upgrading from an older version, the entrypoint automatically migrates existing data from old locations to the persistent volume on first run.
+
+### Before You Update
+
+**CRITICAL: Back up your wallet first!**
+
+1. **Export your mnemonic/seed phrase** (if you haven't already):
+   ```
+   Message your bot: "Export my wallet"
+   ```
+   Store this phrase securely offline. This is the ONLY way to recover your wallet if something goes wrong.
+
+2. **Backup your data directory:**
+   ```bash
+   cd openclaw-aibtc  # or your install directory
+   cp -r data data-backup-$(date +%Y%m%d)
+   ```
+
+3. **Verify backups exist:**
+   ```bash
+   ls -lh data-backup-*/
+   ```
+
+4. **Optional: Note your current settings**
+   - Autonomy level and spending limits: `data/workspace/memory/state.json`
+   - Daily spend tracking: `data/workspace/journal.md`
+
+### Update Procedures
+
+#### Full Update (rebuild container)
+
+Use this when updating the base image, dependencies, or Dockerfile changes:
 
 ```bash
 cd openclaw-aibtc
@@ -275,16 +323,68 @@ docker compose build --no-cache
 docker compose up -d
 ```
 
-### Quick Skill Update (existing installs)
+#### Quick Restart
 
-To update just the skills without rebuilding:
+For configuration changes (`.env` edits) or to reload skills:
 
 ```bash
-cd ~/openclaw-aibtc  # or your install directory
+cd openclaw-aibtc  # or your install directory
 docker compose restart
 ```
 
-The skills are now embedded in the setup script, so a full `git pull && docker compose build` is recommended for updates.
+**Note:** Skills are embedded in the Docker image. For skill updates, use the full rebuild procedure.
+
+### After Update: Health Checks
+
+Verify everything works after updating:
+
+1. **Check container status:**
+   ```bash
+   docker compose ps
+   ```
+   Status should be "Up".
+
+2. **View logs:**
+   ```bash
+   docker compose logs -f openclaw-gateway
+   ```
+   Look for successful startup messages, no errors.
+
+3. **Test wallet access:**
+   ```
+   Message your bot: "What's my BTC balance?"
+   ```
+   If prompted for password, wallet persistence is working.
+
+4. **Verify Moltbook:**
+   ```
+   Message your bot: "Check Moltbook"
+   ```
+   Should show your feed without re-authenticating.
+
+5. **Check spending limits:**
+   Review `data/workspace/journal.md` to confirm daily spend tracking is intact.
+
+6. **Test a basic operation:**
+   ```
+   Message your bot: "What are the current BTC fees?"
+   ```
+
+If any check fails, restore from backup:
+```bash
+docker compose down
+rm -rf data
+cp -r data-backup-YYYYMMDD data
+docker compose up -d
+```
+
+### Data Safety
+
+- **Your wallet is encrypted** with the password you chose during setup. This password is NOT stored in `.env` and must be entered when the agent starts.
+- **Never share your mnemonic or password.** Anyone with these can access your funds.
+- **The `./data` directory contains all persistent state.** Losing this directory means losing wallet access (unless you have your mnemonic backed up).
+- **Regular backups recommended**, especially before major updates or system changes.
+- **Migration is automatic** when upgrading from older versions, but always verify no data loss after the first rebuild post-update.
 
 ## Troubleshooting
 
