@@ -251,6 +251,9 @@ elif [ -d /home/node/.aibtc ]; then
     else
         echo "Warning: Failed to migrate ~/.aibtc data, skipping symlink" >&2
     fi
+elif [ -e /home/node/.aibtc ]; then
+    echo "Error: /home/node/.aibtc exists and is not a directory or symlink. Please move or remove it before starting the container." >&2
+    exit 1
 else
     ln -s /home/node/.openclaw/aibtc-data /home/node/.aibtc
 fi
@@ -266,6 +269,9 @@ elif [ -d /home/node/.config/moltbook ]; then
     else
         echo "Warning: Failed to migrate ~/.config/moltbook data, skipping symlink" >&2
     fi
+elif [ -e /home/node/.config/moltbook ]; then
+    echo "Error: /home/node/.config/moltbook exists and is not a directory or symlink. Please move or remove it before starting the container." >&2
+    exit 1
 else
     ln -s /home/node/.openclaw/moltbook-data /home/node/.config/moltbook
 fi
@@ -281,7 +287,7 @@ FROM ghcr.io/openclaw/openclaw:v2026.2.2
 USER root
 
 # Install aibtc-mcp-server and mcporter; allow node user to self-update
-RUN npm install -g @aibtc/mcp-server@1.22.2 mcporter@latest \
+RUN npm install -g @aibtc/mcp-server@1.22.2 mcporter@0.7.3 \
     && chown -R node:node /usr/local/lib/node_modules/@aibtc \
     && chown -R node:node /usr/local/lib/node_modules/mcporter
 

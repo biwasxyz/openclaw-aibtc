@@ -381,9 +381,15 @@ mkdir -p /home/node/.openclaw/moltbook-data
 if [ -L /home/node/.aibtc ]; then
     :
 elif [ -d /home/node/.aibtc ]; then
-    cp -a /home/node/.aibtc/. /home/node/.openclaw/aibtc-data/ 2>/dev/null || true
-    rm -rf /home/node/.aibtc
-    ln -s /home/node/.openclaw/aibtc-data /home/node/.aibtc
+    if cp -a /home/node/.aibtc/. /home/node/.openclaw/aibtc-data/ 2>/dev/null; then
+        rm -rf /home/node/.aibtc
+        ln -s /home/node/.openclaw/aibtc-data /home/node/.aibtc
+    else
+        echo "Warning: Failed to migrate ~/.aibtc data, skipping symlink" >&2
+    fi
+elif [ -e /home/node/.aibtc ]; then
+    echo "Error: /home/node/.aibtc exists and is not a directory or symlink. Please move or remove it before starting the container." >&2
+    exit 1
 else
     ln -s /home/node/.openclaw/aibtc-data /home/node/.aibtc
 fi
@@ -393,9 +399,15 @@ mkdir -p /home/node/.config
 if [ -L /home/node/.config/moltbook ]; then
     :
 elif [ -d /home/node/.config/moltbook ]; then
-    cp -a /home/node/.config/moltbook/. /home/node/.openclaw/moltbook-data/ 2>/dev/null || true
-    rm -rf /home/node/.config/moltbook
-    ln -s /home/node/.openclaw/moltbook-data /home/node/.config/moltbook
+    if cp -a /home/node/.config/moltbook/. /home/node/.openclaw/moltbook-data/ 2>/dev/null; then
+        rm -rf /home/node/.config/moltbook
+        ln -s /home/node/.openclaw/moltbook-data /home/node/.config/moltbook
+    else
+        echo "Warning: Failed to migrate ~/.config/moltbook data, skipping symlink" >&2
+    fi
+elif [ -e /home/node/.config/moltbook ]; then
+    echo "Error: /home/node/.config/moltbook exists and is not a directory or symlink. Please move or remove it before starting the container." >&2
+    exit 1
 else
     ln -s /home/node/.openclaw/moltbook-data /home/node/.config/moltbook
 fi
@@ -406,12 +418,12 @@ chmod +x entrypoint.sh
 
 # Create Dockerfile
 cat > Dockerfile << 'EOF'
-FROM ghcr.io/openclaw/openclaw:latest
+FROM ghcr.io/openclaw/openclaw:v2026.2.2
 
 USER root
 
 # Install aibtc-mcp-server and mcporter; allow node user to self-update
-RUN npm install -g @aibtc/mcp-server@latest mcporter@latest \
+RUN npm install -g @aibtc/mcp-server@1.22.2 mcporter@0.7.3 \
     && chown -R node:node /usr/local/lib/node_modules/@aibtc \
     && chown -R node:node /usr/local/lib/node_modules/mcporter
 

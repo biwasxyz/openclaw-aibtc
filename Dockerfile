@@ -6,7 +6,7 @@ FROM ghcr.io/openclaw/openclaw:v2026.2.2
 USER root
 
 # Install aibtc-mcp-server and mcporter; allow node user to self-update
-RUN npm install -g @aibtc/mcp-server@1.22.2 mcporter@latest \
+RUN npm install -g @aibtc/mcp-server@1.22.2 mcporter@0.7.3 \
     && chown -R node:node /usr/local/lib/node_modules/@aibtc \
     && chown -R node:node /usr/local/lib/node_modules/mcporter
 

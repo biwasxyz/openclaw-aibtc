@@ -273,7 +273,7 @@ Your agent's data survives Docker rebuilds through a **symlink persistence model
 - On startup, `entrypoint.sh` creates symlinks to route application data into this persistent volume:
   - `~/.aibtc` → `~/.openclaw/aibtc-data` (wallet, encrypted with your password)
   - `~/.config/moltbook` → `~/.openclaw/moltbook-data` (Moltbook credentials)
-  - `~/.openclaw/workspace` (OpenClaw state, journal, memory)
+- OpenClaw workspace data (state, journal, memory) is stored under `~/.openclaw/workspace`, which persists because it lives inside the mounted volume and is also explicitly mounted in `docker-compose.yml`.
 
 **What persists across updates:**
 - Wallet data and private keys (encrypted)
