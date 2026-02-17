@@ -3,6 +3,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    image: ghcr.io/aibtcdev/openclaw-aibtc:latest
     container_name: openclaw-aibtc
     environment:
       HOME: /home/node
