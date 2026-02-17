@@ -160,7 +160,7 @@ Inside the container (as the `node` user):
 | `~/.openclaw/` | Persistent volume mount root |
 | `~/.openclaw/workspace/` | OpenClaw workspace (memory, skills, USER.md) |
 | `~/.openclaw/workspace/memory/state.json` | Agent state and authorization config |
-| `~/.openclaw/workspace/journal.md` | Transaction and event log |
+| `~/.openclaw/workspace/memory/journal.md` | Transaction and event log |
 | `~/.openclaw/config/mcporter.json` | mcporter MCP bridge config |
 | `~/.openclaw/config/.wallet_password` | Wallet password file |
 | `~/.openclaw/openclaw.json` | OpenClaw config (Telegram token, channels) |
@@ -293,7 +293,7 @@ Run all checks before pushing. These match the required CI status checks.
 
 ```bash
 # ShellCheck - shell script linting
-shellcheck -S warning local-setup.sh vps-setup.sh update-skill.sh
+shellcheck -S warning local-setup.sh vps-setup.sh update-skill.sh entrypoint.sh
 
 # Hadolint - Dockerfile linting
 hadolint Dockerfile
@@ -302,22 +302,81 @@ hadolint Dockerfile
 docker compose config --quiet
 
 # JSON template validation
+status=0
 for f in templates/memory/*.json; do
-  python3 -c "import json, sys; json.load(open(sys.argv[1]))" "$f" && echo "OK: $f" || echo "FAIL: $f"
+  if ! python3 -c "import json, sys; json.load(open(sys.argv[1]))" "$f"; then
+    echo "FAIL: $f is not valid JSON"
+    status=1
+  else
+    echo "OK: $f"
+  fi
 done
+exit $status
 
 # SKILL.md YAML frontmatter validation
-python3 -c "
+python3 << 'PYEOF'
 import yaml, glob, sys
-for path in sorted(glob.glob('skills/*/SKILL.md')):
-    with open(path) as f: content = f.read()
-    if not content.startswith('---\n'): print(f'FAIL: {path}'); sys.exit(1)
-    end = content.index('\n---', 3)
-    data = yaml.safe_load(content[4:end])
-    missing = [f for f in ['name','description'] if f not in data]
-    print(f'FAIL: {path} missing {missing}' if missing else f'OK: {path}')
-    if missing: sys.exit(1)
-"
+
+required_fields = ["name", "description"]
+status = 0
+
+for path in sorted(glob.glob("skills/*/SKILL.md")):
+    print(f"Checking: {path}")
+    with open(path) as f:
+        content = f.read()
+
+    if not content.startswith("---\n"):
+        print(f"  FAIL: {path} has no YAML frontmatter")
+        status = 1
+        continue
+
+    try:
+        end = content.index("\n---", 3)
+        fm_text = content[4:end]
+    except ValueError:
+        print(f"  FAIL: {path} has unclosed frontmatter (missing closing ---)")
+        status = 1
+        continue
+
+    try:
+        data = yaml.safe_load(fm_text)
+    except yaml.YAMLError as e:
+        print(f"  FAIL: {path} has invalid YAML: {e}")
+        status = 1
+        continue
+
+    if not isinstance(data, dict):
+        print(f"  FAIL: {path} frontmatter is not a mapping")
+        status = 1
+        continue
+
+    missing = [f for f in required_fields if f not in data]
+    if missing:
+        print(f"  FAIL: {path} missing required fields: {', '.join(missing)}")
+        status = 1
+    else:
+        print(f"  OK: {path} (fields: {', '.join(data.keys())})")
+
+sys.exit(status)
+PYEOF
+
+# Env var coverage check (validates all docker-compose.yml vars are in .env.example)
+compose_vars=$(grep -oP '\$\{(\w+)' docker-compose.yml | sed 's/\${//' | sort -u)
+env_vars=$(grep -oP '^\w+(?==)' .env.example | sort -u)
+missing=0
+for var in $compose_vars; do
+  if ! echo "$env_vars" | grep -qx "$var"; then
+    echo "MISSING: $var is referenced in docker-compose.yml but not defined in .env.example"
+    missing=1
+  else
+    echo "OK: $var"
+  fi
+done
+if [ "$missing" -eq 1 ]; then
+  echo "Error: Some env vars in docker-compose.yml are not documented in .env.example"
+  exit 1
+fi
+echo "All env vars in docker-compose.yml are documented in .env.example"
 
 # Markdown lint
 npx markdownlint-cli2 "**/*.md" "#node_modules"
