@@ -1,7 +1,7 @@
 # OpenClaw + aibtc Docker Image
 # Based on official OpenClaw image with aibtc-mcp-server pre-installed
 
-FROM ghcr.io/openclaw/openclaw:v2026.2.2
+FROM ghcr.io/openclaw/openclaw:2026.2.2
 
 USER root
 
