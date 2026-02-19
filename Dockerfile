@@ -9,7 +9,7 @@ USER root
 RUN npm install -g @aibtc/mcp-server@1.24.1 mcporter@0.7.3 \
     && chown -R node:node /usr/local/lib/node_modules/@aibtc \
     && chown -R node:node /usr/local/lib/node_modules/mcporter \
-    && chown -R node:node /usr/local/bin/aibtc-mcp-server
+    && chown node:node /usr/local/bin/aibtc-mcp-server /usr/local/bin/mcporter
 
 # Install sudo, git, and GitHub CLI; grant node user scoped privileges
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
