@@ -84,6 +84,49 @@ bash tests/test-setup-sync.sh
 
 Tests heredoc content sync and autonomy preset values across setup scripts.
 
+## Version Bumping
+
+The `Dockerfile` pins exact versions of `@aibtc/mcp-server` and `mcporter` to ensure
+reproducible builds. When a new MCP server version is released, update the pin manually.
+
+### Checking for updates
+
+```bash
+# Check current latest version on npm
+npm view @aibtc/mcp-server version
+npm view mcporter version
+```
+
+### Bumping the MCP server version
+
+1. Update the version in `Dockerfile`:
+
+   ```dockerfile
+   RUN npm install -g @aibtc/mcp-server@X.Y.Z mcporter@A.B.C \
+   ```
+
+2. Rebuild and test:
+
+   ```bash
+   docker compose build
+   docker compose up -d
+   ```
+
+3. Commit with a conventional commit message:
+
+   ```bash
+   git commit -m "chore(docker): bump @aibtc/mcp-server to X.Y.Z"
+   ```
+
+### What NOT to do
+
+- Do not use `@latest` in the Dockerfile -- this causes non-reproducible builds and
+  has previously caused breakage when breaking changes shipped in a new release.
+- Do not let `update-skill.sh` manage Dockerfile versions -- that script only updates
+  agent skills and configs inside a running container, not the image itself.
+
+---
+
 ## Branch Protection Rules
 
 These rules should be configured by a repository admin in **Settings > Branches > Branch protection rules** for the `main` branch.

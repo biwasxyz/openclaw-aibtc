@@ -1590,47 +1590,9 @@ printf "${GREEN}✓ mcporter config updated with keep-alive!${NC}\n"
 
 cd "$INSTALL_DIR"
 
-# Update Dockerfile: ensure sudo, git, and gh CLI are installed
-DOCKERFILE="$INSTALL_DIR/Dockerfile"
-NEEDS_REBUILD=false
-
-if [ -f "$DOCKERFILE" ]; then
-    if ! grep -q 'github-cli' "$DOCKERFILE" 2>/dev/null; then
-        printf "${BLUE}Updating Dockerfile: adding sudo, git, and GitHub CLI...${NC}\n"
-        cat > "$DOCKERFILE" << 'EOF'
-FROM ghcr.io/openclaw/openclaw:latest
-USER root
-RUN npm install -g @aibtc/mcp-server mcporter
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends sudo git curl gpg \
-    && curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
-       | gpg --dearmor -o /usr/share/keyrings/githubcli-archive-keyring.gpg \
-    && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" \
-       > /etc/apt/sources.list.d/github-cli.list \
-    && apt-get update && apt-get install -y --no-install-recommends gh \
-    && rm -rf /var/lib/apt/lists/* \
-    && echo "node ALL=(root) NOPASSWD: /usr/bin/apt-get, /usr/bin/apt, /usr/local/bin/npm, /usr/bin/npx" > /etc/sudoers.d/node-agent \
-    && chmod 0440 /etc/sudoers.d/node-agent
-ENV NETWORK=mainnet
-USER node
-CMD ["node", "dist/index.js", "gateway", "--bind", "lan", "--port", "18789"]
-EOF
-        NEEDS_REBUILD=true
-        printf "${GREEN}✓ Dockerfile updated with sudo, git, and GitHub CLI${NC}\n"
-    else
-        printf "${BLUE}Dockerfile already has git and GitHub CLI, skipping.${NC}\n"
-    fi
-fi
-
-if [ "$NEEDS_REBUILD" = true ]; then
-    printf "${BLUE}Rebuilding Docker image (this may take 1-2 minutes)...${NC}\n"
-    docker compose build --no-cache
-    printf "${BLUE}Restarting container with new image...${NC}\n"
-    docker compose up -d
-else
-    printf "${BLUE}Restarting container...${NC}\n"
-    docker compose restart
-fi
+# Restart container to pick up updated skills
+printf "${BLUE}Restarting container...${NC}\n"
+docker compose restart
 
 printf "${GREEN}✓ Done! Your agent now has:${NC}\n"
 printf "  - Autonomous operation with 4-tier security model\n"
