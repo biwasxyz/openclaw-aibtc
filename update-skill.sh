@@ -1590,9 +1590,10 @@ printf "${GREEN}✓ mcporter config updated with keep-alive!${NC}\n"
 
 cd "$INSTALL_DIR"
 
-# Restart container to pick up updated skills
-printf "${BLUE}Restarting container...${NC}\n"
-docker compose restart
+# Restart (or start) container to pick up updated skills
+printf "${BLUE}Restarting container (or starting if not running)...${NC}\n"
+docker compose restart || docker compose up -d
+printf "${BLUE}Note: To pick up image-level changes (sudo/git/gh, mcp-server version), run 'docker compose build' and then 'docker compose up -d'.${NC}\n"
 
 printf "${GREEN}✓ Done! Your agent now has:${NC}\n"
 printf "  - Autonomous operation with 4-tier security model\n"
