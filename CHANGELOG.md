@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.1](https://github.com/aibtcdev/openclaw-aibtc/compare/v1.0.0...v1.0.1) (2026-02-20)
+
+
+### Bug Fixes
+
+* update Dockerfile version pins to latest releases ([#27](https://github.com/aibtcdev/openclaw-aibtc/issues/27)) ([c590a1c](https://github.com/aibtcdev/openclaw-aibtc/commit/c590a1c77620a91588295e862b4e559f704ee508))
+
 ## 1.0.0 (2026-02-17)
 
 
