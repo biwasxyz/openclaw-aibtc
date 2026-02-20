@@ -92,6 +92,21 @@ Safe read-only operations. Available to ALL users (including public).
 | sBTC deposit info | `aibtc.sbtc_get_deposit_info` |
 | sBTC peg info | `aibtc.sbtc_get_peg_info` |
 | Read-only contract call | `aibtc.call_read_only_function` |
+| List BTC UTXOs | `aibtc.get_btc_utxos` |
+| Cardinal UTXOs (safe to spend) | `aibtc.get_cardinal_utxos` |
+| Transaction status | `aibtc.get_transaction_status` |
+| Verify BTC signature | `aibtc.btc_verify_message` |
+| Verify Stacks signature | `aibtc.stacks_verify_message` |
+| Verify SIP-018 signature | `aibtc.sip018_verify` |
+| Verify Schnorr signature | `aibtc.schnorr_verify_digest` |
+| Bitflow: ticker info | `aibtc.bitflow_get_ticker` |
+| Bitflow: list tokens | `aibtc.bitflow_get_tokens` |
+| Bitflow: swap targets | `aibtc.bitflow_get_swap_targets` |
+| Bitflow: swap quote | `aibtc.bitflow_get_quote` |
+| Bitflow: swap routes | `aibtc.bitflow_get_routes` |
+| Bitflow: keeper contract | `aibtc.bitflow_get_keeper_contract` |
+| Bitflow: keeper user info | `aibtc.bitflow_get_keeper_user` |
+| Bitflow: get order | `aibtc.bitflow_get_order` |
 
 #### Tier 1: Auto-Approved Within Limits
 
@@ -112,6 +127,8 @@ The agent executes these **autonomously** as long as:
 | Zest repay | `aibtc.zest_repay` | Repaying own debt |
 | x402 paid endpoint | `aibtc.execute_x402_endpoint` | Per-call cost within limit |
 | Transfer NFT | `aibtc.transfer_nft` | Low-value NFTs |
+| Bitflow swap | `aibtc.bitflow_swap` | Within per-tx limit |
+| Zest claim rewards | `aibtc.zest_claim_rewards` | Claim earned yield |
 
 **Before executing a Tier 1 operation:**
 1. Check `state.json` for `authorization.todaySpent` vs `authorization.dailyAutoLimit`
@@ -137,6 +154,12 @@ The agent explains what it wants to do and **asks the human to confirm** (yes/no
 | Stack STX | `aibtc.stack_stx` | Locks funds for stacking period |
 | Extend stacking | `aibtc.extend_stacking` | Extends lock period |
 | Broadcast transaction | `aibtc.broadcast_transaction` | Raw transaction broadcast |
+| Register BNS name (fast) | `aibtc.claim_bns_name_fast` | One-step BNS registration |
+| Preorder BNS name | `aibtc.preorder_bns_name` | First step of 2-step BNS registration |
+| Register BNS name | `aibtc.register_bns_name` | Second step of 2-step BNS registration |
+| Bitflow create order | `aibtc.bitflow_create_order` | Place limit order |
+| Bitflow cancel order | `aibtc.bitflow_cancel_order` | Cancel open limit order |
+| Execute x402 endpoint (large) | `aibtc.execute_x402_endpoint` | When cost exceeds per-tx limit |
 | Daily limit exceeded | Any Tier 1 op | When todaySpent + amount > dailyAutoLimit |
 
 **Tier 2 flow:**
@@ -159,6 +182,12 @@ These operations are **irreversible, dangerous, or expose secrets**. The agent M
 | Switch wallet | `aibtc.wallet_switch` | Changes active signing key |
 | Import wallet | `aibtc.wallet_import` | Imports external key material |
 | Set wallet timeout | `aibtc.wallet_set_timeout` | Changes security parameters |
+| Rotate wallet password | `aibtc.wallet_rotate_password` | Changes wallet encryption password |
+| Sign BTC message | `aibtc.btc_sign_message` | Signs with Bitcoin key |
+| Sign Stacks message | `aibtc.stacks_sign_message` | Signs with Stacks key |
+| SIP-018 sign | `aibtc.sip018_sign` | Signs structured data (on-chain verification) |
+| SIP-018 hash | `aibtc.sip018_hash` | Hashes structured data for SIP-018 |
+| Schnorr sign digest | `aibtc.schnorr_sign_digest` | Raw Schnorr signature over digest |
 
 **Tier 3 flow:**
 1. Tell the human: "This is a high-security operation. I need you to provide the wallet password directly."
@@ -409,3 +438,31 @@ Tier 1 operations execute autonomously within limits. Tier 2 operations require 
 **User:** "mypassword123"
 
 **Agent:** Executes export, shows result, logs operation (never logs password).
+
+---
+
+## Tool Coverage
+
+The `@aibtc/mcp-server` package exposes approximately 155 tools. The tier tables above
+cover the tools relevant to standard agent operations. The following tools are intentionally
+excluded from this skill.
+
+### Excluded Tools
+
+| Tool(s) | Category | Reason Excluded |
+|---------|----------|----------------|
+| `get_ordinal_utxos`, `get_inscriptions_by_address`, `get_inscription`, `estimate_inscription_fee`, `inscribe`, `inscribe_reveal`, `get_taproot_address` | Ordinals & Inscriptions | Advanced Bitcoin L1 feature. Ordinal management requires specialized knowledge to avoid accidentally destroying inscription value by spending ordinal UTXOs in a regular transfer. Use only when you know what you are doing. |
+| `pillar_connect`, `pillar_disconnect`, `pillar_status`, `pillar_send`, `pillar_fund`, `pillar_add_admin`, `pillar_supply`, `pillar_auto_compound`, `pillar_unwind`, `pillar_boost`, `pillar_position`, `pillar_create_wallet`, `pillar_invite`, `pillar_dca_*`, `pillar_key_*`, `pillar_direct_*` | Pillar Smart Wallet | Mainnet-only DeFi smart wallet with passkey signing. Requires a separate Pillar account setup and is not part of the standard agent wallet flow. Not included in default tiers to avoid accidental use without a Pillar wallet. |
+| `yield_hunter_start`, `yield_hunter_stop`, `yield_hunter_status`, `yield_hunter_configure` | Yield Hunter | Experimental autonomous yield optimization agent. Runs background strategies that may conflict with the tier-based spending model and spending limits tracked in `state.json`. |
+| `register_identity`, `get_identity`, `give_feedback`, `get_reputation`, `request_validation`, `get_validation_status`, `get_validation_summary` | ERC-8004 Identity | On-chain identity and reputation system. Superseded by the aibtc.com registration flow documented in the `aibtc-lifecycle` skill. Agents should use `https://aibtc.com/api/register` instead. |
+| `scaffold_x402_endpoint`, `scaffold_x402_ai_endpoint` | Scaffolding | Developer tooling for creating new x402 endpoints. Not relevant to standard agent operation; intended for developers building new services. |
+| `openrouter_integration_guide`, `openrouter_models` | OpenRouter | Integration guide and model listing for OpenRouter AI routing. Informational tools for developers, not runtime agent operations. |
+| `send_inbox_message` | Inbox | Agent-to-agent messaging system. Currently experimental and not part of the standard operation flow. |
+| `set_hiro_api_key`, `get_hiro_api_key`, `delete_hiro_api_key`, `set_stacks_api_url`, `get_stacks_api_url`, `delete_stacks_api_url` | Settings | Server configuration tools. Should be set at deployment time via environment variables, not managed by the agent at runtime. |
+| `check_relay_health` | Relay Diagnostic | Developer/ops health check tool. Not needed for normal agent operation. |
+| `get_server_version` | Utility | Version check utility. Not needed in normal operation. |
+
+> **Note on `get_taproot_address`:** This tool returns the Taproot (P2TR) Bitcoin address
+> for the wallet. It is excluded from the standard tiers because Taproot addresses are
+> primarily used for ordinal inscriptions. Using a Taproot address for regular transfers
+> without understanding ordinal implications can result in lost inscriptions.
