@@ -1,14 +1,15 @@
 # OpenClaw + aibtc Docker Image
 # Based on official OpenClaw image with aibtc-mcp-server pre-installed
 
-FROM ghcr.io/openclaw/openclaw:2026.2.2
+FROM ghcr.io/openclaw/openclaw:2026.2.19
 
 USER root
 
 # Install aibtc-mcp-server and mcporter; allow node user to self-update
-RUN npm install -g @aibtc/mcp-server@1.22.2 mcporter@0.7.3 \
+RUN npm install -g @aibtc/mcp-server@1.24.1 mcporter@0.7.3 \
     && chown -R node:node /usr/local/lib/node_modules/@aibtc \
-    && chown -R node:node /usr/local/lib/node_modules/mcporter
+    && chown -R node:node /usr/local/lib/node_modules/mcporter \
+    && chown node:node /usr/local/bin/aibtc-mcp-server /usr/local/bin/mcporter
 
 # Install sudo, git, and GitHub CLI; grant node user scoped privileges
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
