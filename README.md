@@ -1,3 +1,5 @@
+> **⚠️ This repository has been archived.** This project has been retired.
+
 # OpenClaw + aibtc
 
 ![CI](https://github.com/aibtcdev/openclaw-aibtc/actions/workflows/ci.yml/badge.svg)
